@@ -53,9 +53,6 @@ For each game, find the minimum set of cubes that must have been present. What i
 
 '''
 
-from dataclasses import dataclass, field
-from pprint import pprint
-
 import day2_input
 
 input_dict = day2_input.day2_input_dict
