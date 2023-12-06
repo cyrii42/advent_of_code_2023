@@ -29,6 +29,38 @@ In this schematic, two numbers are not part numbers because they are not adjacen
 
 Of course, the actual engine schematic is much larger. What is the sum of all of the part numbers in the engine schematic?'''
 
+'''
+--- Part Two ---
+
+The engineer finds the missing part and installs it in the engine! As the engine springs to life, you jump in the closest gondola, finally ready to ascend to the water source.
+
+You don't seem to be going very fast, though. Maybe something is still wrong? Fortunately, the gondola has a phone labeled "help", so you pick it up and the engineer answers.
+
+Before you can explain the situation, she suggests that you look out the window. There stands the engineer, holding a phone in one hand and waving with the other. You're going so slowly that you haven't even left the station. You exit the gondola.
+
+The missing part wasn't the only issue - one of the gears in the engine is wrong. A gear is any * symbol that is adjacent to exactly two part numbers. Its gear ratio is the result of multiplying those two numbers together.
+
+This time, you need to find the gear ratio of every gear and add them all up so that the engineer can figure out which gear needs to be replaced.
+
+Consider the same engine schematic again:
+
+467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..
+
+In this schematic, there are two gears. The first is in the top left; it has part numbers 467 and 35, so its gear ratio is 16345. The second gear is in the lower right; its gear ratio is 451490. (The * adjacent to 617 is not a gear because it is only adjacent to one part number.) Adding up all of the gear ratios produces 467835.
+
+What is the sum of all of the gear ratios in your engine schematic?
+
+'''
+
 from dataclasses import dataclass, field
 from pprint import pprint
 
@@ -79,32 +111,23 @@ class SchematicRow():
     row_list: list[str] = field(repr=False)
     numbers_in_row: list[SchematicNumber] = field(init=False)
     adjacent_nums: list[int] = field(init=False)
-
-
+    sum_of_adjacent_nums: int = field(init=False)
     
     def __post_init__(self) -> None:
         self.numbers_in_row = self.find_numbers()
         self.previous_row = ('' if self.row_num == 0 else self.row_list[self.row_num - 1])
         self.next_row = ('' if (self.row_num == (len(self.row_list)-1)) else self.row_list[self.row_num + 1])
         self.adjacent_nums = [x.num_int for x in self.numbers_in_row if x.adjacent_to_symbol]
+        self.sum_of_adjacent_nums = sum(self.adjacent_nums)
         
     
     def find_numbers(self) -> list[SchematicNumber]:
-        ''' Finds numbers in this `SchematicRow`.
-        
-        Outputs a list of `SchematicNumber` objects, each of which contains:
-
-        - (1)  an integer corresponding to the line number in the schematic;
-        - (2)  a string containing the number itself;
-        - (3)  an integer corresponding to the starting index for the number; and
-        - (4)  an integer corresponding to the ending index for the number;
-        - (5)  a full copy of this `Schematic`'s `input_list`'''
-
+        ''' Finds numbers in this `SchematicRow` and outputs a list of `SchematicNumber` objects.'''
         output_list = []
         for i, char in enumerate(self.row):
             if char.isnumeric() and (self.row[i-1].isnumeric() == False):
                 num_string = char
-                for x in range(i+1,(len(self.row)-1)):
+                for x in range(i+1,len(self.row)):
                     if self.row[x].isnumeric():
                         num_string = num_string + self.row[x]
                         continue
@@ -117,50 +140,38 @@ class SchematicRow():
 
 
 class Schematic():
-    def __init__(self, input_string: str):
-        self.input_string = input_string
+    def __init__(self, input: str):
+        self.input_string = input
         self.row_list = self.input_string.split(sep='\n')
         self.symbol_list = [x for x in set(self.input_string) if x.isnumeric() == False and x != '.']
         self.row_objects = [SchematicRow(i, x, self.row_list) for (i, x) in enumerate(self.row_list)]
+        self.row_sums = [x.sum_of_adjacent_nums for x in self.row_objects]
     
     def find_total(self) -> int:
         ''' Finds the sum of all `SchematicNumber` objects in this `Schematic`.'''
-        return sum([int(x) for x in self.find_numbers()])
+        total = 0
+        for subtotal in self.row_sums:
+            total = total + subtotal
+        return total
         
-    
     
 def main():
     with open('./inputs/day3.txt') as file:
-        input_string = file.read()
+        puzzle_input_string = file.read()
+        
+    with open('./inputs/day3_test.txt') as file:
+        test_input_string = file.read()
 
-    test_string = ("467..114.....*........35..633.......#...617*...........+.58...592...........755....$.*.....664.598..")
-
-    schematic = Schematic(input_string)
-    schematic_rows = schematic.row_objects
+    schematic = Schematic(puzzle_input_string)
     
-    for row in schematic_rows:
+    for row in schematic.row_objects:
         print(f"\nRow {row.row_num - 1}:    {row.previous_row}")
         print(f"*Row {row.row_num}*:  {row.row}")
         print(f"Row {row.row_num + 1}:    {row.next_row}") 
-        # print(f"Row {row.row_num}:  {len(row.numbers_in_row)} numbers found")
-        print(f"Row {row.row_num}:  Adjacent nums:  {row.adjacent_nums}")
-
-    # for i in range(20):
-    #     row = schematic.row_objects[i]
-    #     print(row.row)
-    #     print(row.find_numbers())
-    
-    
-    # print(row0.row)
-    # print(row0.find_numbers())
-    # print(schematic_numbers)
-
-    # print(
-    #     sum(
-    #         [x.num_int for x in schematic_numbers if x.adjacent_to_symbol]
-    #     )
-    # )
-    
+        print(f"Adjacent nums:  {row.adjacent_nums}")
+        print(f"Sum of adjacent nums:  {row.sum_of_adjacent_nums}")
+        
+    print(f"\nGRAND TOTAL:  {schematic.find_total()}")
 
 
 if __name__ == '__main__':
