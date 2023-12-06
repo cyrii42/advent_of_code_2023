@@ -74,10 +74,24 @@ class SchematicNumber():
         
 @dataclass
 class SchematicRow():
-    row: str
+    row_num: int
+    row: str = field(repr=False)
+    row_list: list[str] = field(repr=False)
+    numbers_in_row: list[SchematicNumber] = field(init=False)
     
-    def find_numbers(self) -> list[str]:
-        ''' Finds numbers in this `SchematicRow`.'''
+    def __post_init__(self) -> None:
+        self.numbers_in_row = self.find_numbers()
+    
+    def find_numbers(self) -> list[SchematicNumber]:
+        ''' Finds numbers in this `SchematicRow`.
+        
+        Outputs a list of `SchematicNumber` objects, each of which contains:
+
+        - (1)  an integer corresponding to the line number in the schematic;
+        - (2)  a string containing the number itself;
+        - (3)  an integer corresponding to the starting index for the number; and
+        - (4)  an integer corresponding to the ending index for the number;
+        - (5)  a full copy of this `Schematic`'s `input_list`'''
 
         output_list = []
         for i, char in enumerate(self.row):
@@ -89,7 +103,7 @@ class SchematicRow():
                         continue
                     else:
                         break
-                output_list.append(num_string)
+                output_list.append(SchematicNumber(self.row_num, num_string, i, i+len(num_string), self.row_list))
             else:
                 continue
         return output_list
@@ -98,52 +112,14 @@ class SchematicRow():
 class Schematic():
     def __init__(self, input_string: str):
         self.input_string = input_string
-        self.input_list = self.input_string.split(sep='\n')
+        self.row_list = self.input_string.split(sep='\n')
         self.symbol_list = [x for x in set(self.input_string) if x.isnumeric() == False and x != '.']
-        self.row_objects = [SchematicRow(x) for x in self.input_list]
-
-    def find_numbers(self) -> list[SchematicNumber]:
-        ''' Finds the numbers in the schematic object.  
-
-        Outputs a list of `SchematicNumber` objects, each of which contains:
-
-        - (1)  an integer corresponding to the line number in the schematic;
-        - (2)  a string containing the number itself;
-        - (3)  an integer corresponding to the starting index for the number; and
-        - (4)  an integer corresponding to the ending index for the number;
-        - (5)  a full copy of this `Schematic`'s `input_list`'''
-
-        output_list = []
-        for n, row in enumerate(self.input_list):
-            for i, char in enumerate(row):
-                if char.isnumeric() and (row[i-1].isnumeric() == False):
-                    num_string = char
-                    for x in range(i+1,(len(row)-1)):
-                        if row[x].isnumeric():
-                            num_string = num_string + row[x]
-                            continue
-                        else:
-                            break
-                    output_list.append(SchematicNumber(n, num_string, i, i+len(num_string), self.input_list))
-                else:
-                    continue
-        return output_list
-
-        # output_list = []
-        # for n, row in enumerate(self.input_list):
-        #     for i, char in enumerate(row):
-        #         if char.isnumeric() and (row[i-1].isnumeric() == False):
-        #             num_string = char
-        #             for x in range(i+1,(len(row)-1)):
-        #                 if row[x].isnumeric():
-        #                     num_string = num_string + row[x]
-        #                     continue
-        #                 else:
-        #                     break
-        #             output_list.append(SchematicNumber(n, num_string, i, i+len(num_string), self.input_list))
-        #         else:
-        #             continue
-        # return output_list
+        self.row_objects = [SchematicRow(i, x, self.row_list) for (i, x) in enumerate(self.row_list)]
+    
+    def find_total(self) -> int:
+        ''' Finds the sum of all `SchematicNumber` objects in this `Schematic`.'''
+        return sum([int(x) for x in self.find_numbers()])
+        
     
     
 def main():
@@ -153,12 +129,21 @@ def main():
     test_string = ("467..114.....*........35..633.......#...617*...........+.58...592...........755....$.*.....664.598..")
 
     schematic = Schematic(input_string)
-    # schematic_numbers = schematic.find_numbers()
+    schematic_rows = schematic.row_objects
+    
+    print(schematic_rows)
+    
+    # for i, x in enumerate(found_numbers):
+    #     print(f"\nRow{i}:  {schematic.row_}")
+    #     print(f"Row {i}:  {schematic.row_list[i]}")
+    #     print(f"Row {i}:  {len(x)} numbers found")
+    
 
-    for i in range(5):
-        row = schematic.row_objects[i]
-        print(row.row)
-        print(row.find_numbers())
+
+    # for i in range(20):
+    #     row = schematic.row_objects[i]
+    #     print(row.row)
+    #     print(row.find_numbers())
     
     
     # print(row0.row)
