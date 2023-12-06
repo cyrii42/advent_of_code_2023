@@ -136,7 +136,7 @@ def main():
     for row in schematic_rows:
         print(f"\nRow {row.row_num - 1}:  {row.previous_row}")
         print(f"Row {row.row_num}:  {row.row}")
-        print(f"Row {row.row_num + 1}:  {row.next_row}")
+        print(f"Row {row.row_num + 1}:  {row.next_row}") 
         # print(f"Row {row.row_num}:  {len(x)} numbers found")
     
 
