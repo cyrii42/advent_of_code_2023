@@ -42,16 +42,16 @@ class SchematicNumber():
     idx_end: int
     schematic_list: list[str] = field(repr=False)
     num_int: int = field(init=False)
-    previous_line: str = field(init=False, repr=False)
-    same_line: str = field(init=False, repr=False)
-    next_line: str = field(init=False, repr=False)
+    previous_row: str = field(init=False, repr=False)
+    same_row: str = field(init=False, repr=False)
+    next_row: str = field(init=False, repr=False)
     adjacent_to_symbol: bool = field(init=False)
 
     def __post_init__(self):
         self.num_int = int(self.num_string)
-        self.previous_line = ('' if (self.line_num) == 0 else self.schematic_list[self.line_num - 1])
-        self.same_line = self.schematic_list[self.line_num]
-        self.next_line = ('' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1])
+        self.previous_row = ('' if (self.line_num) == 0 else self.schematic_list[self.line_num - 1])
+        self.same_row = self.schematic_list[self.line_num]
+        self.next_row = ('' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1])
         self.final_index = (len(self.schematic_list[self.line_num]) - 1)
         self.adjacent_to_symbol = self.test_number_adjacency()
 
@@ -61,9 +61,9 @@ class SchematicNumber():
         end_plus_one = (self.final_index if (self.idx_end == self.final_index) else (self.idx_end + 1))
         
         characters_to_check = (
-            self.same_line[start_minus_one:end_plus_one] +
-            self.previous_line[start_minus_one:end_plus_one] +
-            self.next_line[start_minus_one:end_plus_one]
+            self.same_row[start_minus_one:end_plus_one] +
+            self.previous_row[start_minus_one:end_plus_one] +
+            self.next_row[start_minus_one:end_plus_one]
         )
 
         if any([(x in SYMBOL_LIST) for x in characters_to_check]):
@@ -81,6 +81,8 @@ class SchematicRow():
     
     def __post_init__(self) -> None:
         self.numbers_in_row = self.find_numbers()
+        self.previous_row = ('' if self.row_num == 0 else self.row_list[self.row_num - 1])
+        self.next_row = ('' if (self.row_num == (len(self.row_list)-1)) else self.row_list[self.row_num + 1])
     
     def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds numbers in this `SchematicRow`.
@@ -131,12 +133,11 @@ def main():
     schematic = Schematic(input_string)
     schematic_rows = schematic.row_objects
     
-    print(schematic_rows)
-    
-    # for i, x in enumerate(found_numbers):
-    #     print(f"\nRow{i}:  {schematic.row_}")
-    #     print(f"Row {i}:  {schematic.row_list[i]}")
-    #     print(f"Row {i}:  {len(x)} numbers found")
+    for row in schematic_rows:
+        print(f"\nRow {row.row_num - 1}:  {row.previous_row}")
+        print(f"Row {row.row_num}:  {row.row}")
+        print(f"Row {row.row_num + 1}:  {row.next_row}")
+        # print(f"Row {row.row_num}:  {len(x)} numbers found")
     
 
 
