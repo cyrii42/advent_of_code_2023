@@ -229,7 +229,7 @@ def get_stats() -> None:
     
 
 def main():
-    pass
+    get_stats()
 
 if __name__ == '__main__':
     main()
