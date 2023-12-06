@@ -105,13 +105,40 @@ class SchematicNumber():
         
         
 @dataclass
+class SchematicAsterisk():
+    line_num: int
+    idx_start: int
+    schematic_list: list[str] = field(repr=False)
+    previous_row: str = field(init=False, repr=False)
+    same_row: str = field(init=False, repr=False)
+    next_row: str = field(init=False, repr=False)
+    is_gear: bool = field(init=False)
+    num1: int = field(init=False)
+    num2: int = field(init=False)
+    gear_ratio: int = field(init=False)
+
+    def __post_init__(self):
+        self.previous_row = ('' if (self.line_num) == 0 else self.schematic_list[self.line_num - 1])
+        self.same_row = self.schematic_list[self.line_num]
+        self.next_row = ('' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1])
+        self.final_index = (len(self.schematic_list[self.line_num]) - 1)
+        self.is_gear = self.test_gear_status()
+
+    def test_gear_status(self) -> bool:
+        ''' Tests whether this `SchematicAsterisk` qualifies a "gear," and outputs a boolean.  
+        
+        If output is `True`, this function proceeds to set values for `self.num1`, `self.num2`, and `self.gear_ratio`'''
+        pass
+        
+        
+@dataclass
 class SchematicRow():
     row_num: int
     row: str = field(repr=False)
     row_list: list[str] = field(repr=False)
-    numbers_in_row: list[SchematicNumber] = field(init=False)
-    adjacent_nums: list[int] = field(init=False)
-    sum_of_adjacent_nums: int = field(init=False)
+    numbers_in_row: list[SchematicNumber] = field(init=False, repr=False)
+    adjacent_nums: list[int] = field(init=False, repr=False)
+    sum_of_adjacent_nums: int = field(init=False, repr=False)
     
     def __post_init__(self) -> None:
         self.numbers_in_row = self.find_numbers()
@@ -120,7 +147,6 @@ class SchematicRow():
         self.adjacent_nums = [x.num_int for x in self.numbers_in_row if x.adjacent_to_symbol]
         self.sum_of_adjacent_nums = sum(self.adjacent_nums)
         
-    
     def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds numbers in this `SchematicRow` and outputs a list of `SchematicNumber` objects.'''
         output_list = []
@@ -137,6 +163,16 @@ class SchematicRow():
             else:
                 continue
         return output_list
+    
+    def find_asterisks(self) -> list[SchematicAsterisk]:
+        ''' Finds asterisk symbols in this `SchematicRow` and outputs a list of `SchematicAsterisk` objects.'''
+        output_list = []
+        for i, char in enumerate(self.row):
+            if char == '*':
+                output_list.append(SchematicAsterisk(self.row_num, i, self.row_list))
+            else:
+                continue
+        return output_list  #if len(output_list) > 0 else None
 
 
 class Schematic():
@@ -145,24 +181,38 @@ class Schematic():
         self.row_list = self.input_string.split(sep='\n')
         self.symbol_list = [x for x in set(self.input_string) if x.isnumeric() == False and x != '.']
         self.row_objects = [SchematicRow(i, x, self.row_list) for (i, x) in enumerate(self.row_list)]
-        self.row_sums = [x.sum_of_adjacent_nums for x in self.row_objects]
+        self.part_one_row_sums = [x.sum_of_adjacent_nums for x in self.row_objects]
     
-    def find_total(self) -> int:
+    def find_part_one_total(self) -> int:
         ''' Finds the sum of all `SchematicNumber` objects in this `Schematic`.'''
         total = 0
-        for subtotal in self.row_sums:
+        for subtotal in self.part_one_row_sums:
             total = total + subtotal
         return total
+    
+    def find_part_two_total(self) -> int:
+        ''' Finds the sum of all "gear ratios" 'in this `Schematic`.'''
+        pass
         
     
-def main():
-    with open('./inputs/day3.txt') as file:
-        puzzle_input_string = file.read()
-        
-    with open('./inputs/day3_test.txt') as file:
-        test_input_string = file.read()
+    
 
-    schematic = Schematic(puzzle_input_string)
+
+
+    
+def part_two(puzzle_string: str) -> None:
+    schematic = Schematic(puzzle_string)
+
+    for row in schematic.row_objects:
+        print(row.find_asterisks())
+        
+        
+        
+        
+        
+
+def part_one(puzzle_string: str) -> None:
+    schematic = Schematic(puzzle_string)
     
     for row in schematic.row_objects:
         print(f"\nRow {row.row_num - 1}:    {row.previous_row}")
@@ -171,8 +221,19 @@ def main():
         print(f"Adjacent nums:  {row.adjacent_nums}")
         print(f"Sum of adjacent nums:  {row.sum_of_adjacent_nums}")
         
-    print(f"\nGRAND TOTAL:  {schematic.find_total()}")
+    print(f"\nGRAND TOTAL:  {schematic.find_part_one_total()}")
 
+
+def main():
+    with open('./inputs/day3.txt') as file:
+        puzzle_input_string = file.read()
+        
+    with open('./inputs/day3_test.txt') as file:
+        test_input_string = file.read()
+        
+    # part_one(puzzle_input_string)
+    part_two(test_input_string)
+    
 
 if __name__ == '__main__':
     main()
