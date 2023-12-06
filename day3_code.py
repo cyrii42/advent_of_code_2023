@@ -30,7 +30,9 @@ In this schematic, two numbers are not part numbers because they are not adjacen
 Of course, the actual engine schematic is much larger. What is the sum of all of the part numbers in the engine schematic?'''
 
 from dataclasses import dataclass, field
+from pprint import pprint
 
+SYMBOL_LIST = ['$', '&', '@', '%', '\n', '+', '*', '-', '/', '#', '=']
 
 @dataclass
 class SchematicNumber():
@@ -39,56 +41,44 @@ class SchematicNumber():
     idx_start: int
     idx_end: int
     schematic_list: list[str] = field(repr=False)
-    previous_line: str = field(init=False)
-    same_line: str = field(init=False)
-    next_line: str = field(init=False)
+    num_int: int = field(init=False)
+    previous_line: str = field(init=False, repr=False)
+    same_line: str = field(init=False, repr=False)
+    next_line: str = field(init=False, repr=False)
+    adjacent_to_symbol: bool = field(init=False)
 
     def __post_init__(self):
-        self.previous_line = '' if self.line_num == 0 else self.schematic_list[self.line_num - 1]
+        self.num_int = int(self.num_string)
+        self.previous_line = ('' if (self.line_num) == 0 else self.schematic_list[self.line_num - 1])
         self.same_line = self.schematic_list[self.line_num]
-        self.next_line = '' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1]
+        self.next_line = ('' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1])
+        self.final_index = (len(self.schematic_list[self.line_num]) - 1)
+        self.adjacent_to_symbol = self.test_number_adjacency()
 
-    # def test_number_adjacency(num_tuple: tuple[str, int, int], schematic: list[str]) -> int:
-    #     ''' Tests whether this SchematicNumber is adjacent to a symbol.'''
-    #     line_num = num_tuple[0]
-    #     final_index = len(schematic[line_num]) - 1
-    #     num_string = num_tuple[1]
-    #     start = num_tuple[2]
-    #     start_minus_one = (0 if start == 0 else (start - 1))
-    #     end = num_tuple[3]
-    #     end_plus_one = (final_index if end == final_index else (end + 1))
-    #     # print(f"start:  {start}  -  end: {end}")
-    #     # print(f"start_minus_one:  {start_minus_one}  -  end_plus_one: {end_plus_one}")
-    #     # print(f"Final index:  {final_index}")
+    def test_number_adjacency(self) -> bool:
+        ''' Tests whether this `SchematicNumber` is adjacent to a symbol.'''
+        start_minus_one = (0 if (self.idx_start == 0) else (self.idx_start - 1))
+        end_plus_one = (self.final_index if (self.idx_end == self.final_index) else (self.idx_end + 1))
+        
+        characters_to_check = (
+            self.same_line[start_minus_one:end_plus_one] +
+            self.previous_line[start_minus_one:end_plus_one] +
+            self.next_line[start_minus_one:end_plus_one]
+        )
 
-    #     same_line = schematic[line_num]
-    #     previous_line = schematic[line_num - 1]
-    #     next_line = '' if line_num == len(schematic)-1 else schematic[line_num + 1]
-
-    #     # print(f"Start: {start}; End: {end}")
-    #     symbols_to_check = (
-    #         same_line[start_minus_one:end_plus_one] +
-    #         previous_line[start_minus_one:end_plus_one] +
-    #         next_line[start_minus_one:end_plus_one]
-    #     )
-
-    #     # print('')
-    #     # print(f"TUPLE:  {num_tuple}")
-    #     # print(f"{previous_line} \n{same_line} \n{next_line}")
-    #     # print(f"SYMBOLS TO CHECK: {symbols_to_check} - {any([(x in symbol_list) for x in symbols_to_check])}")
-
-    #     if any([(x in symbol_list) for x in symbols_to_check]):
-    #         return int(num_string)
-    #     else:
-    #             return 0
+        if any([(x in SYMBOL_LIST) for x in characters_to_check]):
+            return True
+        else:
+            return False
 
 
 class Schematic():
     def __init__(self, input_string: str):
         self.input_string = input_string
         self.input_list = self.input_string.split(sep='\n')
+        self.symbol_list = [x for x in set(self.input_string) if x.isnumeric() == False and x != '.']
 
-    def find_numbers(self) -> list[tuple[int, str, int, int]]:
+    def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds the numbers in the schematic object.  
 
         Outputs a list of `SchematicNumber` objects, each of which contains:
@@ -115,15 +105,22 @@ class Schematic():
                     continue
         return output_list
 
-
 def main():
     with open('./inputs/day3.txt') as file:
         input_string = file.read()
 
     test_string = ("467..114.....*........35..633.......#...617*...........+.58...592...........755....$.*.....664.598..")
 
-    schematic = Schematic(test_string)
-    print(schematic.find_numbers())
+    schematic = Schematic(input_string)
+    schematic_numbers = schematic.find_numbers()
+
+    print(schematic_numbers)
+
+    print(
+        sum(
+            [x.num_int for x in schematic_numbers if x.adjacent_to_symbol]
+        )
+    )
     
 
 
