@@ -73,11 +73,6 @@ class SchematicNumber():
     idx_start: int
     idx_end: int
     schematic_list: list[str] = field(repr=False)
-    num_int: int = field(init=False)
-    previous_row: str = field(init=False, repr=False)
-    same_row: str = field(init=False, repr=False)
-    next_row: str = field(init=False, repr=False)
-    adjacent_to_symbol: bool = field(init=False)
 
     def __post_init__(self):
         self.num_int = int(self.num_string)
@@ -106,29 +101,46 @@ class SchematicNumber():
         
 @dataclass
 class SchematicAsterisk():
-    line_num: int
-    idx_start: int
+    row_num: int
+    index: int
     schematic_list: list[str] = field(repr=False)
-    previous_row: str = field(init=False, repr=False)
-    same_row: str = field(init=False, repr=False)
-    next_row: str = field(init=False, repr=False)
     is_gear: bool = field(init=False)
-    num1: int = field(init=False)
-    num2: int = field(init=False)
-    gear_ratio: int = field(init=False)
 
     def __post_init__(self):
-        self.previous_row = ('' if (self.line_num) == 0 else self.schematic_list[self.line_num - 1])
-        self.same_row = self.schematic_list[self.line_num]
-        self.next_row = ('' if self.line_num == (len(self.schematic_list)-1) else self.schematic_list[self.line_num+1])
-        self.final_index = (len(self.schematic_list[self.line_num]) - 1)
+        self.previous_row = ('' if (self.row_num) == 0 else self.schematic_list[self.row_num - 1])
+        self.same_row = self.schematic_list[self.row_num]
+        self.next_row = ('' if self.row_num == (len(self.schematic_list)-1) else self.schematic_list[self.row_num+1])
+        self.final_index = (len(self.schematic_list[self.row_num]) - 1)
+        self.characters_to_check = (self.same_row[self.index-1:self.index+2] +
+                                    self.previous_row[self.index-1:self.index+2] +
+                                    self.next_row[self.index-1:self.index+2])
         self.is_gear = self.test_gear_status()
 
     def test_gear_status(self) -> bool:
         ''' Tests whether this `SchematicAsterisk` qualifies a "gear," and outputs a boolean.  
+            If output is `True`, this method proceeds to set values  for `self.num1`, `self.num2`, and `self.gear_ratio`'''
         
-        If output is `True`, this function proceeds to set values for `self.num1`, `self.num2`, and `self.gear_ratio`'''
-        pass
+        print(f"Checking asterisk found in Row #{self.row_num}... Chars to check:  {self.characters_to_check}")
+
+        numeric_characters_found = [x for x in self.characters_to_check if x.isnumeric()]
+        
+        if len(numeric_characters_found) <= 1:
+            return False
+        else:
+            self.__find_adjacent_numeric_characters(numeric_characters_found)
+            
+    def __find_adjacent_numeric_characters(self, numeric_characters_found: list[str]) -> dict:
+        ''' Private method, to be called only if `test_gear_status()` determines that there is at least one numeric character
+            adjacent to this `SchematicAsterisk`.  This method determines how many suchadjacent numerical characters exist,
+            and outputs a list of dictionaries with information about each one.'''
+        
+        output_list_of_dicts = []
+        print(f"Numeric characters found:  {numeric_characters_found}")
+        
+            
+    def __find_full_number(self) -> int:
+        ''' Private method.  Takes a partial integer found within `test_gear_status()` and returns the
+            full integer of which it is a part.'''
         
         
 @dataclass
@@ -173,6 +185,20 @@ class SchematicRow():
             else:
                 continue
         return output_list  #if len(output_list) > 0 else None
+    
+    def print_adjacent_rows_part_one(self) -> None:
+        print(f"\nRow {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
+        print(f"*Row {self.row_num}*:  {self.row}")
+        print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.row_list)-1 else print('END')
+        print(f"Adjacent nums:  {self.adjacent_nums}")
+        print(f"Sum of adjacent nums:  {self.sum_of_adjacent_nums}")
+        
+    def print_adjacent_rows_part_two(self) -> None:
+        print(f"\nRow {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('START')
+        print(f"*Row {self.row_num}*:  {self.row}")
+        print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.row_list)-1 else print('END')
+        # print(f"Adjacent nums:  {self.adjacent_nums}")
+        # print(f"Sum of adjacent nums:  {self.sum_of_adjacent_nums}")
 
 
 class Schematic():
@@ -204,7 +230,8 @@ def part_two(puzzle_string: str) -> None:
     schematic = Schematic(puzzle_string)
 
     for row in schematic.row_objects:
-        print(row.find_asterisks())
+        row.print_adjacent_rows_part_two()
+        row.find_asterisks()
         
         
         
@@ -215,11 +242,7 @@ def part_one(puzzle_string: str) -> None:
     schematic = Schematic(puzzle_string)
     
     for row in schematic.row_objects:
-        print(f"\nRow {row.row_num - 1}:    {row.previous_row}")
-        print(f"*Row {row.row_num}*:  {row.row}")
-        print(f"Row {row.row_num + 1}:    {row.next_row}") 
-        print(f"Adjacent nums:  {row.adjacent_nums}")
-        print(f"Sum of adjacent nums:  {row.sum_of_adjacent_nums}")
+        row.print_adjacent_rows_part_one()
         
     print(f"\nGRAND TOTAL:  {schematic.find_part_one_total()}")
 
@@ -232,7 +255,7 @@ def main():
         test_input_string = file.read()
         
     # part_one(puzzle_input_string)
-    part_two(test_input_string)
+    part_two(puzzle_input_string)
     
 
 if __name__ == '__main__':
