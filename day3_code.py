@@ -78,11 +78,16 @@ class SchematicRow():
     row: str = field(repr=False)
     row_list: list[str] = field(repr=False)
     numbers_in_row: list[SchematicNumber] = field(init=False)
+    adjacent_nums: list[int] = field(init=False)
+
+
     
     def __post_init__(self) -> None:
         self.numbers_in_row = self.find_numbers()
         self.previous_row = ('' if self.row_num == 0 else self.row_list[self.row_num - 1])
         self.next_row = ('' if (self.row_num == (len(self.row_list)-1)) else self.row_list[self.row_num + 1])
+        self.adjacent_nums = [x.num_int for x in self.numbers_in_row if x.adjacent_to_symbol]
+        
     
     def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds numbers in this `SchematicRow`.
@@ -134,12 +139,11 @@ def main():
     schematic_rows = schematic.row_objects
     
     for row in schematic_rows:
-        print(f"\nRow {row.row_num - 1}:  {row.previous_row}")
-        print(f"Row {row.row_num}:  {row.row}")
-        print(f"Row {row.row_num + 1}:  {row.next_row}") 
-        # print(f"Row {row.row_num}:  {len(x)} numbers found")
-    
-
+        print(f"\nRow {row.row_num - 1}:    {row.previous_row}")
+        print(f"*Row {row.row_num}*:  {row.row}")
+        print(f"Row {row.row_num + 1}:    {row.next_row}") 
+        # print(f"Row {row.row_num}:  {len(row.numbers_in_row)} numbers found")
+        print(f"Row {row.row_num}:  Adjacent nums:  {row.adjacent_nums}")
 
     # for i in range(20):
     #     row = schematic.row_objects[i]
