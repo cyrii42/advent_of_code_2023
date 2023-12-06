@@ -70,6 +70,29 @@ class SchematicNumber():
             return True
         else:
             return False
+        
+        
+@dataclass
+class SchematicRow():
+    row: str
+    
+    def find_numbers(self) -> list[str]:
+        ''' Finds numbers in this `SchematicRow`.'''
+
+        output_list = []
+        for i, char in enumerate(self.row):
+            if char.isnumeric() and (self.row[i-1].isnumeric() == False):
+                num_string = char
+                for x in range(i+1,(len(self.row)-1)):
+                    if self.row[x].isnumeric():
+                        num_string = num_string + self.row[x]
+                        continue
+                    else:
+                        break
+                output_list.append(num_string)
+            else:
+                continue
+        return output_list
 
 
 class Schematic():
@@ -77,6 +100,7 @@ class Schematic():
         self.input_string = input_string
         self.input_list = self.input_string.split(sep='\n')
         self.symbol_list = [x for x in set(self.input_string) if x.isnumeric() == False and x != '.']
+        self.row_objects = [SchematicRow(x) for x in self.input_list]
 
     def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds the numbers in the schematic object.  
@@ -90,13 +114,13 @@ class Schematic():
         - (5)  a full copy of this `Schematic`'s `input_list`'''
 
         output_list = []
-        for n, line in enumerate(self.input_list):
-            for i, char in enumerate(line):
-                if char.isnumeric() and (line[i-1].isnumeric() == False):
+        for n, row in enumerate(self.input_list):
+            for i, char in enumerate(row):
+                if char.isnumeric() and (row[i-1].isnumeric() == False):
                     num_string = char
-                    for x in range(i+1,(len(line)-1)):
-                        if line[x].isnumeric():
-                            num_string = num_string + line[x]
+                    for x in range(i+1,(len(row)-1)):
+                        if row[x].isnumeric():
+                            num_string = num_string + row[x]
                             continue
                         else:
                             break
@@ -105,6 +129,23 @@ class Schematic():
                     continue
         return output_list
 
+        # output_list = []
+        # for n, row in enumerate(self.input_list):
+        #     for i, char in enumerate(row):
+        #         if char.isnumeric() and (row[i-1].isnumeric() == False):
+        #             num_string = char
+        #             for x in range(i+1,(len(row)-1)):
+        #                 if row[x].isnumeric():
+        #                     num_string = num_string + row[x]
+        #                     continue
+        #                 else:
+        #                     break
+        #             output_list.append(SchematicNumber(n, num_string, i, i+len(num_string), self.input_list))
+        #         else:
+        #             continue
+        # return output_list
+    
+    
 def main():
     with open('./inputs/day3.txt') as file:
         input_string = file.read()
@@ -112,15 +153,23 @@ def main():
     test_string = ("467..114.....*........35..633.......#...617*...........+.58...592...........755....$.*.....664.598..")
 
     schematic = Schematic(input_string)
-    schematic_numbers = schematic.find_numbers()
+    # schematic_numbers = schematic.find_numbers()
 
-    print(schematic_numbers)
+    for i in range(5):
+        row = schematic.row_objects[i]
+        print(row.row)
+        print(row.find_numbers())
+    
+    
+    # print(row0.row)
+    # print(row0.find_numbers())
+    # print(schematic_numbers)
 
-    print(
-        sum(
-            [x.num_int for x in schematic_numbers if x.adjacent_to_symbol]
-        )
-    )
+    # print(
+    #     sum(
+    #         [x.num_int for x in schematic_numbers if x.adjacent_to_symbol]
+    #     )
+    # )
     
 
 
