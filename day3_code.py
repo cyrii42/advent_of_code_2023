@@ -148,7 +148,7 @@ class SchematicAsterisk():
         ''' Tests whether this `SchematicAsterisk` qualifies as a "gear," and outputs a boolean.  
             If output is `True`, this method proceeds to set values for `self.num1`, `self.num2`, and `self.gear_ratio`'''
         
-        print(f"\nChecking asterisk found in Row #{self.row_num}... Chars to check:  {self.characters_to_check}")
+        print(f"\nChecking asterisk found in Row #{self.row_num} at index #{self.index}... Chars to check:  {self.characters_to_check}")
 
         if len([x for x in self.characters_to_check if x.isnumeric()]) <= 1:
             print("No adjacent numeric characters found.")
@@ -321,17 +321,28 @@ class Schematic():
     
     
 
-
+### TESTED & CONFIRMED:  THERE ARE NO NUMBERS WITH MORE THAN 3 DIGITS ####
 
     
 def part_two(puzzle_string: str) -> None:
     schematic = Schematic(puzzle_string)
 
-    # for row in schematic.row_objects:
-        # row.print_adjacent_rows_part_two()
-        # print(row.find_asterisks())
-        
-        
+    for row in schematic.row_objects:
+        # print(f"Row {row.row_num}: {row.row}")
+        # print(f"Row {row.row_num}: {[(x.idx_end - x.idx_start) for x in row.numbers_in_row if (x.idx_end - x.idx_start) > 3]}")
+        # print(f"Row {row.row_num}: {[x.idx_start for x in row.numbers_in_row]}")
+        num_index_start_list = [x.idx_start for x in row.numbers_in_row]
+        # print(f"Checking Row {row.row_num}:  {num_index_start_list}")
+        for i, index_num in enumerate(num_index_start_list):
+            if i == 0:
+                continue
+            else:
+                if (index_num - num_index_start_list[i-1]) < 4:
+                    print(f"\nfound a buffalo in Row {row.row_num}!!!!")
+                    print(f"Row {row.row_num}: {row.row}")
+                    print(f"{num_index_start_list[i-1]} vs {index_num}")
+
+                    
         
         
         
@@ -352,7 +363,7 @@ def main():
     with open('./inputs/day3_test.txt') as file:
         test_input_string = file.read()
         
-    # part_one(puzzle_input_string)  ## answer should be 526404
+    # part_one(puzzle_input_string)  ## answer for part one should be 526404
     part_two(puzzle_input_string)  
     
 
