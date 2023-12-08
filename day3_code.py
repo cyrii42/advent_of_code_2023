@@ -346,11 +346,11 @@ class Schematic():
     
     def find_part_two_total(self) -> int:
         ''' Finds the sum of all "gear ratios" 'in this `Schematic`.'''
-        asterisk_lists = [x.asterisks_in_row for x in self.row_objects]
-        all_gears = [x for x in asterisk_lists if len(x) > 1]
-        print(all_gears)
-        # gear_ratios = [x.gear_ratio for x in all_asterisks if x.is_gear]
-        # return sum(gear_ratios)
+        all_rows = [row for row in self.row_objects]
+        all_asterisk_lists = [row.asterisks_in_row for row in all_rows]
+        gear_ratios = [asterisk.gear_ratio for row in all_asterisk_lists for asterisk in row if asterisk.is_gear]
+
+        return sum(gear_ratios)
         
     
     
@@ -361,7 +361,7 @@ class Schematic():
 def part_two(puzzle_string: str) -> None:
     schematic = Schematic(puzzle_string)
     answer = schematic.find_part_two_total()
-    # print(f"ANSWER:  {answer}")
+    print(f"ANSWER:  {answer}")   # 22325015 is too low
 
     # for row in schematic.row_objects:
     #     # print(f"Row {row.row_num}: {row.row}")
