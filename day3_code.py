@@ -76,7 +76,7 @@ class SchematicNumber():
     num_int: int = field(init=False)
     adjacent_to_symbol: bool = field(init=False)
     adjacent_to_asterisk: bool = field(init=False)
-    
+    location_of_adjacent_asterisk: dict = field(init=False)
 
     def __post_init__(self):
         self.num_int = int(self.num_string)
@@ -86,6 +86,7 @@ class SchematicNumber():
         self.final_index = (len(self.schematic_list[self.row_num]) - 1)
         self.adjacent_to_symbol = self.test_number_adjacency()
         self.adjacent_to_asterisk = self.test_number_adjacency_to_asterisk()
+        self.location_of_adjacent_asterisk = self.find_adjacent_asterisk_index() if self.adjacent_to_asterisk else None
 
     def test_number_adjacency(self) -> bool:
         ''' Tests whether this `SchematicNumber` is adjacent to a symbol.'''
@@ -118,6 +119,20 @@ class SchematicNumber():
             return True
         else:
             return False
+
+    def find_adjacent_asterisk_index(self) -> int | None:
+        ''' Finds the index number of the asterisk to which this `SchematicNumber` is adjacent.'''
+        start_minus_one = (0 if (self.idx_start == 0) else (self.idx_start - 1))
+        end_plus_one = (self.final_index if (self.idx_end == self.final_index) else (self.idx_end + 1))
+
+        for n, row in enumerate([self.previous_row, self.same_row, self.next_row]):
+            row_num = self.row_num + (n - 1)
+            for i, char in enumerate(row[start_minus_one:end_plus_one]):
+                if char == "*":
+                    return {'row_num': n, 'index': i}
+        else:
+            return None
+        
         
         
 @dataclass
@@ -129,6 +144,7 @@ class SchematicAsterisk():
     num1: SchematicNumber = None
     num2: SchematicNumber = None
     gear_ratio: int = None
+    nums_in_adjacent_rows: list[SchematicNumber] = None ## FOR TESTING PURPOSES ONLY
 
     def __post_init__(self):
         self.previous_row = ('' if (self.row_num) == 0 else self.schematic_list[self.row_num - 1])
@@ -144,7 +160,7 @@ class SchematicAsterisk():
         ''' Tests whether this `SchematicAsterisk` qualifies as a "gear," and outputs a boolean.  
             If output is `True`, this method proceeds to set values for `self.num1`, `self.num2`, and `self.gear_ratio`'''
         
-        print(f"\nChecking asterisk found in Row #{self.row_num} at index #{self.index}... Chars to check:  {self.characters_to_check}")
+        # print(f"\nChecking asterisk found in Row #{self.row_num} at index #{self.index}... Chars to check:  {self.characters_to_check}")
 
         if len([x for x in self.characters_to_check if x.isnumeric()]) <= 1:
             return False
@@ -152,13 +168,15 @@ class SchematicAsterisk():
             # print(f"Found at least two adjacent numeric characters!  Processing...")
             full_numbers = self.__process_numeric_characters()
             if (len(full_numbers) == 2) and full_numbers[0] is not None and full_numbers[1] is not None:
-                print(f"FOUND 2 NUMBERS:  {[x.num_int for x in full_numbers]}")
-                self.num1 = full_numbers[0]
-                self.num2 = full_numbers[1]
-                self.gear_ratio = self.num1.num_int * self.num2.num_int
+                self.num1 = full_numbers[0].num_int
+                self.num2 = full_numbers[1].num_int
+                self.gear_ratio = self.num1 * self.num2
+                # print(f"**GEAR FOUND!**  Row #{self.row_num}:  {self.num1} * {self.num2} = {self.gear_ratio}")
+                # print(full_numbers)
                 return True
             else:
-                # print("ERROR:  Did not find exactly two full numbers.")
+                # print("FAILURE:  Did not find exactly two full numbers.")
+                # print(full_numbers)
                 return False
             
     def __process_numeric_characters(self) -> list[SchematicNumber]:
@@ -185,7 +203,7 @@ class SchematicAsterisk():
             for i, char in enumerate(row[self.index-1:self.index+2]):
                 if char.isnumeric():
                     # print(f"Found a numeric character!  {char} in row {row_num} at index {i}")
-                    char_dict = {'character': char, 'row_num': row_num, 'index': (self.index + 1 + i)}
+                    char_dict = {'character': char, 'row_num': row_num, 'index': (self.index + i)}
                     list_of_dicts.append(char_dict)
         return list_of_dicts
         
@@ -208,47 +226,102 @@ class SchematicAsterisk():
                 continue  
             
             # if the current row has ONE num char (or THREE, which means one continguous one), find its full number & move on
-            elif (len(char_dicts_list) == 1 or len(char_dicts_list) == 3):
-                full_num_dict = self.__find_full_number_for_num_char(char_dicts_list[0])
-                output_list.append(full_num_dict)    
+            elif (len(char_dicts_list) == 1):# or len(char_dicts_list) == 3):
+                # print(f"Found 1 num char in Row {row_num}:  '{char_dicts_list[0]['character']}' at Index #{char_dicts_list[0]['index']}")
+                full_num_dict_list = self.__find_full_number_for_num_char(char_dicts_list[0])
+                if len(full_num_dict_list) == 1:
+                    output_list.append(full_num_dict_list[0])
+                else:
+                    print(f"\nERROR with 1 num char in Row {row_num}:  '{char_dicts_list[0]['character']}' at Index #{char_dicts_list[0]['index']}")
+                    print(f"Row {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
+                    print(f"*Row {self.row_num}*:  {self.same_row}")
+                    print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.schematic_list)-1 else print('END')
+                    print(full_num_dict_list)
+                continue
+
+            elif len(char_dicts_list) == 3:
+                # print(f"Found 3 num chars in Row {row_num}:  '{char_dicts_list[0]['character']}{char_dicts_list[1]['character']}{char_dicts_list[2]['character']}' at Index #{char_dicts_list[0]['index']}")
+                full_num_dict_list = self.__find_full_number_for_num_char(char_dicts_list[0])
+                if len(full_num_dict_list) == 1:
+                    output_list.append(full_num_dict_list[0])
+                else:
+                    print(f"\nERROR with 3 num chars in Row {row_num}:  '{char_dicts_list[0]['character']}{char_dicts_list[1]['character']}{char_dicts_list[2]['character']}' at Index #{char_dicts_list[0]['index']}")
+                    print(f"Row {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
+                    print(f"*Row {self.row_num}*:  {self.same_row}")
+                    print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.schematic_list)-1 else print('END')
+                    print(full_num_dict_list)
                 continue
                 
             # if the current row has EXACTLY TWO num chars, check if they're contiguous;
             elif ((char_dicts_list[1]['index'] - char_dicts_list[0]['index']) == 1):
-                # print("Found a two-digit contiguous num")
-                full_num_dict = self.__find_full_number_for_num_char(char_dicts_list[0])
-                output_list.append(full_num_dict)    
+                # print(f"Found a two-digit contiguous num in Row {row_num}:  '{char_dicts_list[0]['character']}{char_dicts_list[1]['character']}' at Index #{char_dicts_list[0]['index']}")
+                combined_dict = {'character': (char_dicts_list[0]['character'] + char_dicts_list[1]['character']), 'row_num': char_dicts_list[0]['row_num'], 'index': char_dicts_list[0]['index']}
+                full_num_dict_list = self.__find_full_number_for_num_char(combined_dict)
+                if len(full_num_dict_list) == 1:
+                    output_list.append(full_num_dict_list[0])
+                else:
+                    print(f"\nERROR with two-digit contiguous num in Row {row_num}:  '{char_dicts_list[0]['character']}{char_dicts_list[1]['character']}' at Index #{char_dicts_list[0]['index']} ")
+                    print(f"Row {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
+                    print(f"*Row {self.row_num}*:  {self.same_row}")
+                    print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.schematic_list)-1 else print('END')         
+                    print(full_num_dict_list)     
                 continue
             
             # if the current row has EXACTLY TWO num char and they're NOT contiguous, find the full number for each one
             else:
-                # print("Found two NON-contiguous num chars!!!!!!!!!!!!!")
-                full_num_dict_1 = self.__find_full_number_for_num_char(char_dicts_list[0])
-                output_list.append(full_num_dict_1)    
-                full_num_dict_2 = self.__find_full_number_for_num_char(char_dicts_list[1])
-                output_list.append(full_num_dict_2)    
-                
+                # print(f"Found two NON-contiguous num chars in Row {row_num}:  '{char_dicts_list[0]['character']}' and '{char_dicts_list[1]['character']}' at Index #{char_dicts_list[0]['index']}")
+                full_num_dict_list_1 = self.__find_full_number_for_num_char(char_dicts_list[0])
+                full_num_dict_list_2 = self.__find_full_number_for_num_char(char_dicts_list[1])
+                if len(full_num_dict_list_1) == 1:
+                    if (full_num_dict_list_1 == full_num_dict_list_2):
+                        print(f"ERROR:  Found the same number twice for Row {self.row_num} at Index #{self.index}.")
+                    else:
+                        output_list.append(full_num_dict_list_1[0])
+                        output_list.append(full_num_dict_list_1[0])
+                elif (len(full_num_dict_list_1) == 2):
+                    if (full_num_dict_list_1 == full_num_dict_list_2):
+                        output_list.append(full_num_dict_list_1[0])
+                        output_list.append(full_num_dict_list_1[1])
+                    else:
+                        output_list.append(full_num_dict_list_1[0])
+                        output_list.append(full_num_dict_list_2[0])
+        self.list_of_dicts = output_list   ## FOR TESTING ONLY
         return output_list
     
-    def __find_full_number_for_num_char(self, input_dict: dict) -> SchematicNumber | None:
+    def __find_full_number_for_num_char(self, input_dict: dict) -> [SchematicNumber]:
         # print(f"Finding full number for {input_dict}")
         numbers_in_adjacent_rows = self.__find_numbers_in_adjacent_rows()
         number_list = []
         for number in numbers_in_adjacent_rows:
-            if (number.row_num == input_dict['row_num']) and (number.idx_start < input_dict['index'] < number.idx_end):
-                number_list.append(number)
+            if (number.row_num == input_dict['row_num']):
+                if number.num_string.startswith(input_dict['character'][0]) and (input_dict['index'] == number.idx_start):
+                    number_list.append(number)
+                elif number.num_string.endswith(input_dict['character'][-1]) and (input_dict['index'] == number.idx_end):
+                    number_list.append(number)
+                elif (input_dict['character'] in number.num_string) and (number.idx_start <= input_dict['index']) and (number.idx_end >= input_dict['index']):  # ((abs(input_dict['index'] - number.idx_start) == 1) or (abs(input_dict['index'] - number.idx_end) == 1)):
+                    number_list.append(number)
+                # print(f"Number: {number.num_int} in Row {number.row_num} at Index #{number.idx_start}")
+                # number_list.append(number)
         if len(number_list) == 0:
-            # print("ERROR:  Did not find a number.")
-            return None
-        elif len(number_list) > 1:
-            # print("ERROR:  Found more than one number.")
-            return None
+            # print(f"FAILURE:  Did not find a number for '{input_dict['character']}' in Row {input_dict['row_num']} at Index #{input_dict['index']}.")
+            return number_list
+        elif len(number_list) == 2:
+            # return [x for x in number_list if (x.location_of_adjacent_asterisk['index'] == input_dict['index'])]
+            print(f"\nPOTENTIAL ISSUE:  Found TWO numbers for '{input_dict['character']}' in Row {input_dict['row_num']} at Index #{input_dict['index']}:  {[x.num_int for x in number_list]}.")
+            print(f"Row {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
+            print(f"*Row {self.row_num}*:  {self.same_row}")
+            print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.schematic_list)-1 else print('END')       
+            return number_list
+        elif len(number_list) > 2:
+            print(f"ERROR:  Found MORE THAN TWO numbers for '{input_dict['character']}' in Row {input_dict['row_num']} at Index #{input_dict['index']}.")
+            return number_list
         else:
-            return number_list[0]
+            return number_list
             
             
     def __find_numbers_in_adjacent_rows(self) -> list[SchematicNumber]:
-        ''' Finds numbers in this `SchematicRow` and outputs a list of `SchematicNumber` objects.'''
+        ''' Finds all numbers adjacent to an asterisk in this `SchematicRow` plus the two immediately adjacent rows,
+            and outputs a list of `SchematicNumber` objects.'''
         output_list = []
         for n, row in enumerate([self.previous_row, self.same_row, self.next_row]):
             row_num = self.row_num + (n - 1)
@@ -264,7 +337,9 @@ class SchematicAsterisk():
                     output_list.append(SchematicNumber(row_num, num_string, i, i+len(num_string), self.schematic_list))
                 else:
                     continue
-        return output_list
+        self.nums_in_adjacent_rows = [x for x in output_list if x.adjacent_to_asterisk] ### FOR TESTING ONLY
+        # print(f"Asterisk-adjacent numbers in Row {self.row_num} and adjoining rows: {[x.num_int for x in self.nums_in_adjacent_rows]}")
+        return [x for x in output_list if x.adjacent_to_asterisk]
         
         
 @dataclass
@@ -275,6 +350,8 @@ class SchematicRow():
     numbers_in_row: list[SchematicNumber] = field(init=False, repr=False)
     adjacent_nums: list[int] = field(init=False, repr=False)
     sum_of_adjacent_nums: int = field(init=False, repr=False)
+    asterisks_in_row: list[SchematicAsterisk] = field(init=False, repr=False)
+    contains_gear: bool = field(init=False, repr=False)
     
     def __post_init__(self) -> None:
         self.numbers_in_row = self.find_numbers()
@@ -283,6 +360,7 @@ class SchematicRow():
         self.adjacent_nums = [x.num_int for x in self.numbers_in_row if x.adjacent_to_symbol]
         self.sum_of_adjacent_nums = sum(self.adjacent_nums)
         self.asterisks_in_row = self.find_asterisks()
+        self.contains_gear = True if any(x.is_gear for x in self.asterisks_in_row) else False
         
     def find_numbers(self) -> list[SchematicNumber]:
         ''' Finds numbers in this `SchematicRow` and outputs a list of `SchematicNumber` objects.'''
@@ -296,7 +374,7 @@ class SchematicRow():
                         continue
                     else:
                         break
-                output_list.append(SchematicNumber(self.row_num, num_string, i, i+len(num_string), self.schematic_list))
+                output_list.append(SchematicNumber(self.row_num, num_string, i, i+(len(num_string)-1), self.schematic_list))
             else:
                 continue
         return output_list
@@ -313,20 +391,6 @@ class SchematicRow():
             else:
                 continue
         return output_list  #if len(output_list) > 0 else None
-    
-    def print_adjacent_rows_part_one(self) -> None:
-        print(f"\nRow {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('')
-        print(f"*Row {self.row_num}*:  {self.row}")
-        print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.row_list)-1 else print('END')
-        print(f"Adjacent nums:  {self.adjacent_nums}")
-        print(f"Sum of adjacent nums:  {self.sum_of_adjacent_nums}")
-        
-    def print_adjacent_rows_part_two(self) -> None:
-        print(f"\nRow {self.row_num - 1}:    {self.previous_row}") if self.row_num > 0 else print('START')
-        print(f"*Row {self.row_num}*:  {self.row}")
-        print(f"Row {self.row_num + 1}:    {self.next_row}") if self.row_num < len(self.row_list)-1 else print('END')
-        # print(self.find_asterisks())
-        # print(f"# of asterisks in Row {self.row_num}:  {len(self.asterisks_in_row)}")
 
 
 class Schematic():
@@ -351,6 +415,32 @@ class Schematic():
         gear_ratios = [asterisk.gear_ratio for row in all_asterisk_lists for asterisk in row if asterisk.is_gear]
 
         return sum(gear_ratios)
+
+    def print_adjacent_rows(self) -> None:
+        for row in self.row_objects:
+            print(f"\nRow {row.row_num - 1}:    {row.previous_row}") if row.row_num > 0 else print('')
+            print(f"*Row {row.row_num}*:  {row.row}")
+            print(f"Row {row.row_num + 1}:    {row.next_row}") if row.row_num < len(row.schematic_list)-1 else print('END')\
+            # print(self.find_asterisks())
+            # print(f"# of asterisks in Row {row.row_num}:  {len(row.asterisks_in_row)}")
+            # print(f"Row {row.row_num} contains a gear?  {row.contains_gear}")
+            asterisks_in_row = [x for x in row.asterisks_in_row]
+            nums_in_adjacent_rows = [x.nums_in_adjacent_rows for x in asterisks_in_row if x.nums_in_adjacent_rows is not None]
+            # print(f"Asterisks in Row {row.row_num}:  {[x for x in row.asterisks_in_row]}") # if x.is_gear]}")
+            print('')
+            # print(f"Asterisk-adjacent numbers in Row {row.row_num} and its adjoining rows:  {[x.num_int for row in nums_in_adjacent_rows for x in row if x.row_num == 1]}")
+            # print([x.list_of_dicts for x in row.asterisks_in_row])
+            # print('')
+            # print([x.nums_in_adjacent_rows for x in row.asterisks_in_row])
+            # print(f"Adjacent nums:  {row.adjacent_nums}")
+            # print(f"Sum of adjacent nums:  {row.sum_of_adjacent_nums}")
+        
+    def print_adjacent_rows_part_two(self) -> None:
+        for row in self.row_objects:
+            print(f"\nRow {row.row_num - 1}:    {row.previous_row}") if row.row_num > 0 else print('START')
+            print(f"*Row {row.row_num}*:  {row.row}")
+            print(f"Row {row.row_num + 1}:    {row.next_row}") if row.row_num < len(row.schematic_list)-1 else print('END')
+
         
     
     
@@ -360,8 +450,15 @@ class Schematic():
     
 def part_two(puzzle_string: str) -> None:
     schematic = Schematic(puzzle_string)
-    answer = schematic.find_part_two_total()
-    print(f"ANSWER:  {answer}")   # 22325015 is too low
+    # schematic.print_adjacent_rows()
+    print(f"ANSWER:  {schematic.find_part_two_total()}")   
+    ### WRONG ANSWERS:
+    # 22,325,015 (too low)
+    # 32,517,605 (too low)
+    # 81,862,132 (too low)
+    # 85,786,571 (no characterization)
+    # 81,949,932 (no characterization)
+    # 85,897,315 (no characterization)
 
     # for row in schematic.row_objects:
     #     # print(f"Row {row.row_num}: {row.row}")
@@ -398,6 +495,9 @@ def main():
         
     with open('./inputs/day3_test.txt') as file:
         test_input_string = file.read()
+
+    with open('./inputs/day3_row13test.txt') as file:
+        row13_test_input_string = file.read()
         
     # part_one(puzzle_input_string)  ## answer for part one should be 526404
     part_two(puzzle_input_string)  
