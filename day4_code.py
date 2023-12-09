@@ -76,7 +76,7 @@ class Card():
         self.held_nums = held_nums
         self.num_of_winning_numbers = len([x for x in self.held_nums if x in self.winning_nums])
         self.total_points = self.find_total_points() if self.num_of_winning_numbers > 0 else 0
-        self.reward_card_nums = self.find_reward_card_nums() # if self.num_of_winning_numbers > 0 else None
+        self.reward_card_nums = self.find_reward_card_nums()
 
     def find_total_points(self) -> int:
         total = 0
@@ -89,7 +89,7 @@ class Card():
 
     def find_reward_card_nums(self) -> list[int]:
         card_num_list = [x for x in range(self.card_num+1, (self.card_num + 1 + self.num_of_winning_numbers))]
-        # print(f"Card #{self.card_num} gets {self.num_of_winning_numbers} reward cards:  {card_num_list}")
+        print(f"Card #{self.card_num} gets {self.num_of_winning_numbers} reward cards:  {card_num_list}")
         return card_num_list
   
 @dataclass
@@ -114,12 +114,11 @@ class CardPile():
 
     def pull_all_reward_cards(self, list_of_cards: list[Card]) -> list[Card]:
         output_list = []
-
         for card in list_of_cards:
-            # print(f"Processing Card #{card.card_num} ({card.num_of_winning_numbers} reward cards)...")
+            print(f"Processing Card #{card.card_num} ({card.num_of_winning_numbers} reward cards)...")
             reward_cards = self.pull_reward_cards_for_card(card)
             if len(reward_cards) > 0:
-                # print(f"Card #{card.card_num}:  Pulling {card.num_of_winning_numbers} Reward Card(s) {[x.card_num for x in reward_cards]}")
+                print(f"Card #{card.card_num}:  Pulling {card.num_of_winning_numbers} Reward Card(s) {[x.card_num for x in reward_cards]}")
                 output_list += reward_cards    
                 output_list += self.pull_all_reward_cards(reward_cards)
 
@@ -127,13 +126,12 @@ class CardPile():
 
 def main():
     card_pile = ingest_input_string()
-    # card_list = test_list
 
     part_one_answer = find_part_one_answer(card_pile.card_list)  ## part #1 answer is:  18619
     print(f"PART ONE:  {part_one_answer} points")
     
     part_two_answer = len(card_pile.rewards_card_list)
-    print(f"PART TWO:  {part_two_answer} total reward cards")      ## part #2 answer is:  8063216
+    print(f"PART TWO:  {part_two_answer} total reward cards")    ## part #2 answer is:  8063216
 
 
 def find_part_one_answer(card_list: list[Card]) -> int:
