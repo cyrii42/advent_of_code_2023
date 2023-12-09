@@ -4,6 +4,7 @@ ddtest.csv
 *degreedays.csv
 *electric_data.csv
 .vscode/
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
