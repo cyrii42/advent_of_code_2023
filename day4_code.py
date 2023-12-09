@@ -69,9 +69,6 @@ Process all of the original and copied scratchcards until no more scratchcards a
 '''
 from dataclasses import dataclass, field
 
-
-    
-
 class Card():
     def __init__(self, card_num: str, winning_nums: list, held_nums: list):
         self.card_num = int(card_num)
@@ -94,8 +91,7 @@ class Card():
         card_num_list = [x for x in range(self.card_num+1, (self.card_num + 1 + self.num_of_winning_numbers))]
         # print(f"Card #{self.card_num} gets {self.num_of_winning_numbers} reward cards:  {card_num_list}")
         return card_num_list
-
-            
+  
 @dataclass
 class CardPile():
     card_list: list[Card]
@@ -139,11 +135,6 @@ def main():
     part_two_answer = len(card_pile.rewards_card_list)
     print(f"PART TWO:  {part_two_answer} total reward cards")      ## part #2 answer is:  8063216
 
-    
-
-    # print(card_list[25].find_reward_card_nums())
-
-
 
 def find_part_one_answer(card_list: list[Card]) -> int:
     grand_total = 0
@@ -153,8 +144,6 @@ def find_part_one_answer(card_list: list[Card]) -> int:
         grand_total += card.total_points
 
     return grand_total
-
-
 
 def ingest_input_string() -> CardPile:
     with open('./inputs/day4.txt') as file:
