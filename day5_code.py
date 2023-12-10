@@ -102,35 +102,91 @@ What is the lowest location number that corresponds to any of the initial seed n
 
 '''
 from dataclasses import dataclass, field
+from pprint import pprint
 
-from day5_data_ingestion import (fertilizer_to_water, humidity_to_location,
-                                 light_to_temperature, seed_to_soil,
-                                 soil_to_fertilizer, temperature_to_humidity,
-                                 water_to_light)
-from day5_input import seeds_list
+from day5_data_ingestion import (process_maps, process_seeds,
+                                 process_test_maps, process_test_seeds)
 
 
 @dataclass
 class MapRow():
-    destination_range_start: int
-    source_range_start: int
-    range_length: int
+    destination_range_start: int = field(repr=False)
+    source_range_start: int = field(repr=False)
+    range_length: int = field(repr=False)
+    destination_range: (int, int) = field(init=False)
+    source_range: (int, int) = field(init=False)
 
+    def __post_init__(self):
+        self.destination_range = self.calculate_destination_range()
+        self.source_range = self.calculate_source_range()
+        
+    def calculate_destination_range(self) -> (int, int):
+        destination_range_end = self.destination_range_start - 1 + self.range_length
+        return (self.destination_range_start, destination_range_end)
 
+    def calculate_source_range(self) -> (int, int):
+        source_range_end = self.source_range_start - 1 + self.range_length
+        return (self.source_range_start, source_range_end)
+
+    
 @dataclass
 class Map():
-    rows: list[MapRow]
+    input_type: str
+    output_type: str
+    rows: list[MapRow] = field(repr=False)
+
+    # def pair_
+
+@dataclass
+class Seed():
+    seed_num: int
+    maps_list: list[Map] = field(repr=False)
+    location_num: int = field(init=False)
+
+    def __post_init__(self):
+        self.location_num = self.find_location_num()
+
+    def find_location_num(self) -> int:
+        return 0
+            
+
 
 
 
 
 
 def main():
-    maps = [fertilizer_to_water, humidity_to_location, light_to_temperature, 
-            seed_to_soil, soil_to_fertilizer,  temperature_to_humidity, water_to_light]
+    maps_list = create_map_objects(process_test_maps())
+    # print(f"{maps_list}")
+    seeds_list = [Seed(x, maps_list) for x in process_test_seeds()]
+    print(f"{seeds_list}")
 
-    for map in maps:
-        print(map)
+    
+    lowest_location_num = min([seed.location_num for seed in seeds_list])
+    print(f"PART #1 ANSWER:  {lowest_location_num}")
+    
+
+
+
+def create_map_objects(map_coordinate_lists: list[list[list]]) -> list[Map]:
+    output_list = []
+    for map in map_coordinate_lists:
+        output_list.append(Map(map[0], map[1], [MapRow(x[0], x[1], x[2]) for x in map[2]]))
+
+    seed_to_soil = [x for x in output_list if x.input_type == 'seed']
+    soil_to_fertilizer = [x for x in output_list if x.input_type == 'soil']
+    fertilizer_to_water = [x for x in output_list if x.input_type == 'fertilizer']
+    water_to_light = [x for x in output_list if x.input_type == 'water']
+    light_to_temperature = [x for x in output_list if x.input_type == 'light']
+    temperature_to_humidity = [x for x in output_list if x.input_type == 'temperature']
+    humidity_to_location = [x for x in output_list if x.input_type == 'humidity']
+    
+    return [seed_to_soil + soil_to_fertilizer + fertilizer_to_water + water_to_light
+            + light_to_temperature + temperature_to_humidity + humidity_to_location][0]
+    
+
+
+    
 
 
 if __name__ == '__main__':
