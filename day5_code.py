@@ -116,7 +116,7 @@ class MapRow():
     destination_range: (int, int) = field(init=False)
     source_range: (int, int) = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.destination_range = self.calculate_destination_range()
         self.source_range = self.calculate_source_range()
         
@@ -134,8 +134,19 @@ class Map():
     input_type: str
     output_type: str
     rows: list[MapRow] = field(repr=False)
+    range_dict: dict = field(init=False, repr=False)
 
-    # def pair_
+    def __post_init__(self) -> None:
+        self.range_dict = self.construct_range_dict()
+
+    def construct_range_dict(self) -> dict:
+        final_dict = {}
+        input_title = f"{self.input_type}_input"
+        output_title = f"{self.output_type}_output"
+        for row in self.rows:
+            # final_dict.update({input_title: row.})
+            ...
+        
 
 @dataclass
 class Seed():
