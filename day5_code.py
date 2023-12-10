@@ -101,3 +101,39 @@ So, the lowest location number in this example is 35.
 What is the lowest location number that corresponds to any of the initial seed numbers?
 
 '''
+from dataclasses import dataclass, field
+
+from day5_data_ingestion import (fertilizer_to_water, humidity_to_location,
+                                 light_to_temperature, seed_to_soil,
+                                 soil_to_fertilizer, temperature_to_humidity,
+                                 water_to_light)
+from day5_input import seeds_list
+
+
+@dataclass
+class MapRow():
+    destination_range_start: int
+    source_range_start: int
+    range_length: int
+
+
+@dataclass
+class Map():
+    rows: list[MapRow]
+
+
+
+
+
+def main():
+    maps = [fertilizer_to_water, humidity_to_location, light_to_temperature, 
+            seed_to_soil, soil_to_fertilizer,  temperature_to_humidity, water_to_light]
+
+    for map in maps:
+        print(map)
+
+
+if __name__ == '__main__':
+    main()
+
+    
