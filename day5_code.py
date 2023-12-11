@@ -51,7 +51,7 @@ humidity-to-location map:
 
 The almanac starts by listing which seeds need to be planted: seeds 79, 14, 55, and 13.
 
-The rest of the almanac contains a list of maps which describe how to convert numbers from a source category into numbers in a destination category. That is, the section that starts with seed-to-soil map: describes how to convert a seed number (the source) to a soil number (the destination). This lets the gardener and his team know which soil to use with which seeds, which water to use with which fertilizer, and so on.
+The rest of the almanac contains a list of maps that describe how to convert numbers from a source category into numbers in a destination category. That is, the section that starts with seed-to-soil map: describes how to convert a seed number (the source) to a soil number (the destination). This lets the gardener and his team know which soil to use with which seeds, which water to use with which fertilizer, and so on.
 
 Rather than list every source number and its corresponding destination number one by one, the maps describe entire ranges of numbers that can be converted. Each line within a map contains three numbers: the destination range start, the source range start, and the range length.
 
@@ -100,6 +100,23 @@ So, the lowest location number in this example is 35.
 
 What is the lowest location number that corresponds to any of the initial seed numbers?
 
+--- Part Two ---
+
+Everyone will starve if you only plant such a small number of seeds. Re-reading the almanac, it looks like the seeds: line actually describes ranges of seed numbers.
+
+The values on the initial seeds: line come in pairs. Within each pair, the first value is the start of the range and the second value is the length of the range. So, in the first line of the example above:
+
+seeds: 79 14 55 13
+
+This line describes two ranges of seed numbers to be planted in the garden. The first range starts with seed number 79 and contains 14 values: 79, 80, ..., 91, 92. The second range starts with seed number 55 and contains 13 values: 55, 56, ..., 66, 67.
+
+Now, rather than considering four seed numbers, you need to consider a total of 27 seed numbers.
+
+In the above example, the lowest location number can be obtained from seed number 82, which corresponds to soil 84, fertilizer 84, water 84, light 77, temperature 45, humidity 46, and location 46. So, the lowest location number is 46.
+
+Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest location number that corresponds to any of the initial seed numbers?
+
+
 '''
 from dataclasses import dataclass, field
 from pprint import pprint
@@ -107,6 +124,7 @@ from pprint import pprint
 from day5_data_ingestion import (process_maps, process_seeds,
                                  process_test_maps, process_test_seeds)
 
+SOURCE_ORDER_LIST = ['seed', 'soil', 'fertilizer', 'water', 'light', 'temperature', 'humidity']
 
 @dataclass
 class MapRow():
@@ -131,73 +149,95 @@ class MapRow():
     
 @dataclass
 class Map():
-    input_type: str
-    output_type: str
+    source_type: str
+    destination_type: str
     rows: list[MapRow] = field(repr=False)
-    range_dict: dict = field(init=False, repr=False)
+    range_dict_list: list[dict] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self.range_dict = self.construct_range_dict()
+        self.range_dict_list = self.construct_range_dict_list()
 
-    def construct_range_dict(self) -> dict:
-        final_dict = {}
-        input_title = f"{self.input_type}_input"
-        output_title = f"{self.output_type}_output"
+    def construct_range_dict_list(self) -> list[dict]:
+        output_list = []
         for row in self.rows:
-            # final_dict.update({input_title: row.})
-            ...
+            output_list.append({'source_range': row.source_range, 'destination_range': row.destination_range})
+        return output_list
         
 
 @dataclass
 class Seed():
     seed_num: int
     maps_list: list[Map] = field(repr=False)
+    maps_dict: dict = field(init=False, repr=False)
     location_num: int = field(init=False)
 
     def __post_init__(self):
-        self.location_num = self.find_location_num()
+        self.maps_dict = {map.source_type: map for map in self.maps_list}
+        self.location_num = self.find_location_num()        
 
     def find_location_num(self) -> int:
-        return 0
-            
+        num_to_test = self.seed_num
+        for source_type in SOURCE_ORDER_LIST:
+            current_map = self.maps_dict[source_type]
+            for range_dict in current_map.range_dict_list:
+                if num_to_test in range(range_dict['source_range'][0], range_dict['source_range'][1]+1):
+                    old_num_to_test = num_to_test
+                    num_to_test = range_dict['destination_range'][0] + (num_to_test - range_dict['source_range'][0])
+                    # print(f"Seed #{self.seed_num}:  Paired {current_map.source_type} {old_num_to_test} with {current_map.destination_type} {num_to_test}")
+                    break
+        return num_to_test
+                
+
+def process_seeds_for_part_two(raw_seeds_list: list[int]) -> list[Seed]:
+    maps_list = create_map_objects(process_maps())
+
+    range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
+    range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
+    seed_num_pairs = [(range_start_nums[i], range_length_nums[i]) for i, x in enumerate(range_start_nums)]
+
+    output_list = []
+    for pair in seed_num_pairs:
+        output_list += [Seed(x, maps_list) for x in range(pair[0], pair[0]+pair[1])]
+
+    return output_list
 
 
+def part_two():
+    seeds_list = process_seeds_for_part_two(process_seeds())
+
+    lowest_location_num = min([seed.location_num for seed in seeds_list])
+    print(f"PART #2 ANSWER:  {lowest_location_num}")
 
 
-
-
-def main():
-    maps_list = create_map_objects(process_test_maps())
-    # print(f"{maps_list}")
-    seeds_list = [Seed(x, maps_list) for x in process_test_seeds()]
-    print(f"{seeds_list}")
-
+def part_one():
+    maps_list = create_map_objects(process_maps())
+    seeds_list = [Seed(x, maps_list) for x in process_seeds()]
     
     lowest_location_num = min([seed.location_num for seed in seeds_list])
-    print(f"PART #1 ANSWER:  {lowest_location_num}")
+    print(f"PART #1 ANSWER:  {lowest_location_num}")  # Part 1 answer:  457535844
     
-
-
 
 def create_map_objects(map_coordinate_lists: list[list[list]]) -> list[Map]:
     output_list = []
     for map in map_coordinate_lists:
         output_list.append(Map(map[0], map[1], [MapRow(x[0], x[1], x[2]) for x in map[2]]))
 
-    seed_to_soil = [x for x in output_list if x.input_type == 'seed']
-    soil_to_fertilizer = [x for x in output_list if x.input_type == 'soil']
-    fertilizer_to_water = [x for x in output_list if x.input_type == 'fertilizer']
-    water_to_light = [x for x in output_list if x.input_type == 'water']
-    light_to_temperature = [x for x in output_list if x.input_type == 'light']
-    temperature_to_humidity = [x for x in output_list if x.input_type == 'temperature']
-    humidity_to_location = [x for x in output_list if x.input_type == 'humidity']
+    seed_to_soil = [x for x in output_list if x.source_type == 'seed']
+    soil_to_fertilizer = [x for x in output_list if x.source_type == 'soil']
+    fertilizer_to_water = [x for x in output_list if x.source_type == 'fertilizer']
+    water_to_light = [x for x in output_list if x.source_type == 'water']
+    light_to_temperature = [x for x in output_list if x.source_type == 'light']
+    temperature_to_humidity = [x for x in output_list if x.source_type == 'temperature']
+    humidity_to_location = [x for x in output_list if x.source_type == 'humidity']
     
     return [seed_to_soil + soil_to_fertilizer + fertilizer_to_water + water_to_light
             + light_to_temperature + temperature_to_humidity + humidity_to_location][0]
     
 
 
-    
+def main():
+    part_one()
+    part_two()
 
 
 if __name__ == '__main__':
