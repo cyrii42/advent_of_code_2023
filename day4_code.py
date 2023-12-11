@@ -68,6 +68,7 @@ Process all of the original and copied scratchcards until no more scratchcards a
 
 '''
 from dataclasses import dataclass, field
+import time
 
 class Card():
     def __init__(self, card_num: str, winning_nums: list, held_nums: list):
@@ -125,13 +126,14 @@ class CardPile():
         return output_list
 
 def main():
+    start_time = time.time()
     card_pile = ingest_input_string()
 
     part_one_answer = find_part_one_answer(card_pile.card_list)  ## part #1 answer is:  18619
     print(f"PART ONE:  {part_one_answer} points")
     
     part_two_answer = len(card_pile.rewards_card_list)
-    print(f"PART TWO:  {part_two_answer} total reward cards")    ## part #2 answer is:  8063216
+    print(f"PART TWO:  {part_two_answer} total reward cards ({time.time() - start_time:.2f} sec)")    ## part #2 answer is:  8063216
 
 
 def find_part_one_answer(card_list: list[Card]) -> int:

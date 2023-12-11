@@ -124,8 +124,6 @@ from pprint import pprint
 from day5_data_ingestion import (process_maps, process_seeds,
                                  process_test_maps, process_test_seeds)
 
-SOURCE_ORDER_LIST = ['seed', 'soil', 'fertilizer', 'water', 'light', 'temperature', 'humidity']
-
 @dataclass
 class MapRow():
     destination_range_start: int = field(repr=False)
@@ -168,99 +166,114 @@ class Map():
 class Seed():
     seed_num: int
     maps_list: list[Map] = field(repr=False)
-    maps_dict: dict = field(init=False, repr=False)
-    location_num: int = field(init=False)
-
-    def __post_init__(self):
-        self.maps_dict = {map.source_type: map for map in self.maps_list}
-        self.location_num = self.find_location_num()        
 
     def find_location_num(self) -> int:
         num_to_test = self.seed_num
-        for source_type in SOURCE_ORDER_LIST:
-            current_map = self.maps_dict[source_type]
+        maps_dict = {map.source_type: map for map in self.maps_list} 
+        for source_type in ['seed', 'soil', 'fertilizer', 'water', 'light', 'temperature', 'humidity']:
+            current_map = maps_dict[source_type]
             for range_dict in current_map.range_dict_list:
                 if num_to_test in range(range_dict['source_range'][0], range_dict['source_range'][1]+1):
-                    old_num_to_test = num_to_test
                     num_to_test = range_dict['destination_range'][0] + (num_to_test - range_dict['source_range'][0])
-                    # print(f"Seed #{self.seed_num}:  Paired {current_map.source_type} {old_num_to_test} with {current_map.destination_type} {num_to_test}")
                     break
         return num_to_test
 
-    # def find_location_num_part_two(self) -> int:
-    #     num_to_test = self.seed_num
-    #     chunk_size = 10000
-    #     ....
-
-    # @staticmethod
-    # def __test_seed_num_against_subrange(num_to_test: int, subrange: range) -> int:
-    #     if num_to_test in subrange:
-    #         num_to_test = range_dict['destination_range'][0] + (num_to_test - range_dict['source_range'][0])
-    #         # print(f"Seed #{self.seed_num}:  Paired {current_map.source_type} {old_num_to_test} with {current_map.destination_type} {num_to_test}")
-    #         # break
-            
-
+    
+@dataclass
+class SeedGroup():
+    seed_range_start: int = field(repr=False)
+    seed_range_length: int = field(repr=False)
+    maps_list: list[Map] = field(repr=False)
+    seed_range_end: int = field(init=False, repr=False)
+    seed_range: range = field(init=False)
+    seed_list: list[Seed] = field(init=False, repr=False)
+    
+    def __post_init__(self) -> None:
+        self.seed_range_end = self.seed_range_start + self.seed_range_length
+        self.seed_range = range(self.seed_range_start, self.seed_range_end)
         
-        # if num_to_test in range(range_dict['source_range'][0], range_dict['source_range'][1]+1):
-        #     return range_dict['destination_range'][0] + (num_to_test - range_dict['source_range'][0])
-        # else:
-        #     return num_to_test
-
-
-def find_answer_for_part_two(raw_seeds_list: list[int]) -> int:
-    maps_list = create_map_objects(process_maps())
-
-    range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
-    range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
-    seed_num_pairs = [(range_start_nums[i], range_length_nums[i]) for i, x in enumerate(range_start_nums)]
-
-    # Find total number of seeds and print to console
-    total_seeds_num = 0
-    for pair in seed_num_pairs:
-        total_seeds_num += len(range(pair[0], pair[0]+pair[1]))
-    print(f"Total # of seeds in Part 2:  {total_seeds_num:,}")
-
-    # Compare each new seed to the lowest location number found so far, and only keep the lowest. 
-    lowest_location_num = 0
-    chunk_size = 100000
-    total_progress = 0
-    for i, pair in enumerate(seed_num_pairs):
-        for n, seed_num in enumerate(range(pair[0], pair[0]+pair[1])):
-            seed = Seed(seed_num, maps_list)
-            if i == 0 and n == 0:
-                print(f"Processing Seed #{total_progress+n:,} of {total_seeds_num:,} ({(((total_progress+n)/total_seeds_num)*100):.2f}%).",
-                      f"Current lowest location #:  {lowest_location_num}")
-                lowest_location_num = seed.location_num
-            else:
-                if (n % chunk_size == 0):
-                    print(f"Processing Seed #{total_progress+n:,} of {total_seeds_num:,} ({(((total_progress+n)/total_seeds_num)*100):.2f}%).",
-                          f"Current lowest location #:  {lowest_location_num}")
-                lowest_location_num = min(lowest_location_num, seed.location_num)
-        total_progress += i+1
-    return lowest_location_num
-
-    # output_list = []
-    # for pair in seed_num_pairs:
-    #     output_list += [Seed(x, maps_list) for x in range(pair[0], pair[0]+pair[1])]
-
-    # return output_list
+    def create_seeds_in_seed_range(self) -> None:
+        return [Seed(x, self.maps_list) for x in self.seed_range]
+    
+    def create_subranges(self) -> list[range]:
+        # chunk_size = self.seed_range_length // 10
+        # num_subranges = ((self.seed_range_length // chunk_size) + 1) if ((self.seed_range_length % chunk_size) != 0) else (self.seed_range_length // chunk_size)
+        # return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
+        num_subranges = 50
+        chunk_size = (self.seed_range_length // num_subranges) + (self.seed_range_length % num_subranges)
+        return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
+        
+    def find_lowest_location_num(self) -> int:
+        # seeds_list = self.create_seeds_in_seed_range()
+        
+        return self.create_subranges()
 
 
 def part_two():
+    # raw_seeds_list = process_test_seeds()
+    # raw_maps_list = process_test_maps()
     raw_seeds_list = process_seeds()
+    raw_maps_list = process_maps()
+    
+    maps_list = create_map_objects(raw_maps_list)
+    range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
+    range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
+    seed_groups = [SeedGroup(range_start_nums[i], range_length_nums[i], maps_list) for i, x in enumerate(range_start_nums)]
+    
+    print(f"\n# of Seed Groups in Part 2:  {len(seed_groups)}")
+    for i, seed_group in enumerate(seed_groups):
+        print(f"\nSeed Group #{i+1}:  {seed_group.seed_range_length:,} seeds.",
+              f"\nSubranges: {seed_group.find_lowest_location_num()}") # remember that the end of a range() is non-inclusive
 
-    part_two_answer = find_answer_for_part_two(raw_seeds_list)
+    part_two_answer = None
     print(f"PART #2 ANSWER:  {part_two_answer}")
 
 
 
 
 
+
+
+
+
+
+
+
+def find_answer_for_part_two_OLD(raw_seeds_list: list[int], maps_list: list[Map]) -> int:
+    range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
+    range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
+    seed_num_pairs = [(range_start_nums[i], range_length_nums[i]) for i, x in enumerate(range_start_nums)]
+    
+    # Find total number of seeds and print to console
+    total_seeds_num = 0
+    for i, pair in enumerate(seed_num_pairs):
+        total_seeds_num += len(range(pair[0], pair[0]+pair[1]))
+        print(f"Seed Group #{i+1}:  {len(range(pair[0], pair[0]+pair[1])):,}")
+    print(f"Total Seeds:    {total_seeds_num:,}")
+
+    # Compare each new seed to the lowest location number found so far, and only keep the lowest. 
+    lowest_location_num = 0
+    chunk_size = 1
+    total_progress = 0
+    for i, pair in enumerate(seed_num_pairs):
+        for n, seed_num in enumerate(range(pair[0], pair[0]+pair[1])):
+            seed = Seed(seed_num, maps_list)
+            seed_location_num = seed.find_location_num()
+            if i == 0 and n == 0:
+                lowest_location_num = seed_location_num
+            else:
+                lowest_location_num = min(lowest_location_num, seed_location_num)
+            if (n % chunk_size == 0):
+                print(f"Processing Seed {total_progress:,} of {total_seeds_num:,} ({(((total_progress)/total_seeds_num)*100):.2f}%).",
+                        f"Current lowest location #:  {lowest_location_num}")
+            total_progress += 1
+    return lowest_location_num
+
 def part_one():
     maps_list = create_map_objects(process_maps())
     seeds_list = [Seed(x, maps_list) for x in process_seeds()]
-    
-    lowest_location_num = min([seed.location_num for seed in seeds_list])
+  
+    lowest_location_num = min([seed.find_location_num() for seed in seeds_list])
     print(f"PART #1 ANSWER:  {lowest_location_num}")  # Part 1 answer:  457535844
     
 
@@ -280,7 +293,6 @@ def create_map_objects(map_coordinate_lists: list[list[list]]) -> list[Map]:
     return [seed_to_soil + soil_to_fertilizer + fertilizer_to_water + water_to_light
             + light_to_temperature + temperature_to_humidity + humidity_to_location][0]
     
-
 
 def main():
     part_one()
