@@ -118,6 +118,7 @@ Consider all of the initial seed numbers listed in the ranges on the first line 
 
 
 '''
+import itertools
 from dataclasses import dataclass, field
 from pprint import pprint
 
@@ -132,18 +133,30 @@ class MapRow():
     range_length: int = field(repr=False)
     destination_range: range = field(init=False)
     source_range: range = field(init=False)
+    destination_range_tuple: (int, int) = field(init=False)
+    source_range_tuple: (int, int) = field(init=False)
 
     def __post_init__(self) -> None:
         self.destination_range = self.calculate_destination_range()
         self.source_range = self.calculate_source_range()
+        self.destination_range_tuple = self.calculate_destination_range_tuple()
+        self.source_range_tuple = self.calculate_source_range_tuple()
         
-    def calculate_destination_range(self) -> (int, int):
-        destination_range_end = self.destination_range_start - 1 + self.range_length
+    def calculate_destination_range(self) -> range:
+        destination_range_end = self.destination_range_start + self.range_length
         return range(self.destination_range_start, destination_range_end)
 
-    def calculate_source_range(self) -> (int, int):
+    def calculate_source_range(self) -> range:
         source_range_end = self.source_range_start - 1 + self.range_length
         return range(self.source_range_start, source_range_end)
+
+    def calculate_destination_range_tuple(self) -> (int, int):
+        destination_range_end = self.destination_range_start - 1 + self.range_length
+        return (self.destination_range_start, destination_range_end)
+
+    def calculate_source_range_tuple(self) -> (int, int):
+        source_range_end = self.source_range_start - 1 + self.range_length
+        return (self.source_range_start, source_range_end)
 
     
 @dataclass
@@ -152,23 +165,47 @@ class Map():
     destination_type: str
     rows: list[MapRow] = field(repr=False)
     range_dict_list: list[dict] = field(init=False, repr=False)
-    source_range_list: list[range] = field(init=False)
-    full_source_range: range = field(init=False)
+    source_range_list: list[range] = field(init=False, repr=False)
+    destination_range_list: list[range] = field(init=False)#, repr=False)
+    full_source_range: range = field(init=False, repr=False)
+    full_destination_range: range = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        # print(f"Rows:  {self.rows}")
         self.range_dict_list = self.construct_range_dict_list()
         self.source_range_list = self.construct_sorted_source_range()
-        self.full_source_range = range(self.source_range_list[0].start, self.source_range_list[-1].stop)
+        self.destination_range_list = self.construct_sorted_destination_range()
+        self.full_source_range = self.construct_full_source_range()
+        self.full_destination_range = self.construct_full_destination_range()
+        print(self.full_source_range)
 
-    def construct_sorted_source_range(self) -> None:
+    def construct_full_source_range(self) -> range:
+        sorted_source_start_list = sorted(x.start for x in self.source_range_list)
+        sorted_source_end_list = sorted(x.stop for x in self.source_range_list)
+        return range(sorted_source_start_list[0], sorted_source_end_list[-1])
+
+    def construct_full_destination_range(self) -> range:
+        # print(f"Destination range List:  {self.destination_range_list}")
+        sorted_destination_start_list = sorted(x.start for x in self.destination_range_list)
+        sorted_destination_end_list = sorted(x.stop for x in self.destination_range_list)
+        return range(sorted_destination_start_list[0], sorted_destination_end_list[-1])
+
+    def construct_sorted_source_range(self) -> list[range]:
         source_range_list = [x.source_range for x in self.rows]
         source_range_list = sorted(source_range_list, key=lambda x: x.start)
         return source_range_list
+
+    def construct_sorted_destination_range(self) -> list[range]:
+        destination_range_list = [x.destination_range for x in self.rows]
+        # print(f"\nDestination Range list pre-sorted:  {destination_range_list}")
+        destination_range_list = sorted(destination_range_list, key=lambda x: x.start)
+        # print(f"Destination Range list post-sorted:  {destination_range_list}")
+        return destination_range_list
             
     def construct_range_dict_list(self) -> list[dict]:
         output_list = []
         for row in self.rows:
-            output_list.append({'source_range': row.source_range, 'destination_range': row.destination_range})
+            output_list.append({'source_range': row.source_range_tuple, 'destination_range': row.destination_range_tuple})
         return output_list
         
 
@@ -186,6 +223,23 @@ class Seed():
                 if num_to_test in range(range_dict['source_range'][0], range_dict['source_range'][1]+1):
                     num_to_test = range_dict['destination_range'][0] + (num_to_test - range_dict['source_range'][0])
                     break
+        return num_to_test
+
+    # def find_location_num_part_two(self)
+
+    #     num_to_test = self.seed_num
+    #     maps_dict = {map.source_type: map for map in self.maps_list} 
+    #     for source_type in ['seed', 'soil', 'fertilizer', 'water', 'light', 'temperature', 'humidity']:
+    #         current_map = maps_dict[source_type]
+    #         for i, source_range in enumerate(current_map.source_range_list):
+    #             if num_to_test in source_range:
+    #                 num_to_test = current_map.destination_range_list[i].start + (num_to_test - source_range.start)
+
+            
+            # for range_dict in current_map.range_dict_list:
+            #     if num_to_test in range(range_dict['source_range'].start, range_dict['source_range'].stop+1):
+            #         num_to_test = range_dict['destination_range'].start + (num_to_test - range_dict['source_range'].stop)
+            #         break
         return num_to_test
 
     def range_test(self, test_range: range) -> bool:
@@ -225,23 +279,72 @@ class SeedGroup():
 
 
 def part_two():
-    # raw_seeds_list = process_test_seeds()
-    # raw_maps_list = process_test_maps()
-    raw_seeds_list = process_seeds()
-    raw_maps_list = process_maps()
-    
+    raw_seeds_list = process_test_seeds()
+    raw_maps_list = process_test_maps()
+    # raw_seeds_list = process_seeds()
+    # raw_maps_list = process_maps()
     maps_list = create_map_objects(raw_maps_list)
+    seed_groups = create_seed_groups(raw_seeds_list, maps_list)
+
+    print_sorted_seed_groups(seed_groups)
+    # print_sorted_maps(maps_list)
+
+    full_location_range = create_full_location_range(maps_list[-1])
+    full_seed_range = create_full_seed_range(seed_groups)
+
+    
+
+    # part_two_answer = find_answer_for_part_two_brute_force(raw_seeds_list, create_map_objects(raw_maps_list))
+    part_two_answer = find_seed_for_lowest_location_num(full_location_range, full_seed_range, maps_list)
+    print(f"\nPART #2 ANSWER:  {part_two_answer}")
+
+
+
+    
+
+def find_seed_for_lowest_location_num(full_location_range: range, full_seed_range: range, maps_list: list[Map]):
+    print(f"Full seed range:  {full_seed_range}")
+    print(f"Full location range:  {full_location_range}")
+    reporting_chunk_size = 1
+    for i, location_num in enumerate(full_location_range):
+        for seed_num in full_seed_range:
+            test_seed = Seed(seed_num, maps_list)
+            if test_seed.find_location_num() == location_num:
+                print(f"Found seed with lowest location!  Seed #{test_seed.seed_num} returns Location #{location_num} ")
+                return location_num
+            if (test_seed.seed_num % reporting_chunk_size == 0):
+                print(f"Checked Seed #{test_seed.seed_num:,} for Location #{location_num}.  Still looking...")
+
+def create_full_location_range(humidity_to_location_map: Map) -> list[range]:
+    print(f"Humidity-to_Location Destination Range:  {humidity_to_location_map.full_destination_range}")
+    return humidity_to_location_map.full_destination_range
+
+def create_full_seed_range(seed_groups_list: list[SeedGroup]) -> None:
+    seed_group_range_list = [x.seed_range for x in seed_groups_list]
+    seed_group_range_list = sorted(seed_group_range_list, key=lambda x: x.start)
+
+    return range(seed_group_range_list[0].start, seed_group_range_list[-1].stop)
+
+
+
+
+def create_seed_groups(raw_seeds_list: list[int], maps_list: list[Map]) -> list[SeedGroup]:
     range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
     range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
     seed_group_list = [SeedGroup(range_start_nums[i], range_length_nums[i], maps_list) for i, x in enumerate(range_start_nums)]
     print(f"\n# of Seed Groups in Part 2:  {len(seed_group_list)}")
+    return seed_group_list
 
-    seed_group_range_list = [x.seed_range for x in seed_group_list]
+
+def print_sorted_seed_groups(seed_groups_list: list[SeedGroup]) -> None:
+    seed_group_range_list = [x.seed_range for x in seed_groups_list]
     seed_group_range_list = sorted(seed_group_range_list, key=lambda x: x.start)
 
     for i, seed_group_range in enumerate(seed_group_range_list):
         print(f"Seed Group #{i+1}:  {seed_group_range.start:,} to {seed_group_range.stop:,}")
 
+
+def print_sorted_maps(maps_list: list[Map]) -> None:
     for map_num, map in enumerate(maps_list):
         map_range_list = [x for x in map.source_range_list]
         map_range_list = sorted(map_range_list, key=lambda x: x.start)
@@ -249,9 +352,7 @@ def part_two():
         for i, map_range in enumerate(map_range_list):
             print(f"Map #{map_num+1}, Range #{i+1}:  {map_range.start:,} to {map_range.stop:,}")
 
-    # part_two_answer = find_answer_for_part_two_brute_force(raw_seeds_list, create_map_objects(raw_maps_list))
-    part_two_answer = None
-    print(f"\nPART #2 ANSWER:  {part_two_answer}")
+    
 
 
 
@@ -314,13 +415,13 @@ def create_map_objects(map_coordinate_lists: list[list[list]]) -> list[Map]:
     light_to_temperature = [x for x in output_list if x.source_type == 'light']
     temperature_to_humidity = [x for x in output_list if x.source_type == 'temperature']
     humidity_to_location = [x for x in output_list if x.source_type == 'humidity']
-    
+
     return [seed_to_soil + soil_to_fertilizer + fertilizer_to_water + water_to_light
             + light_to_temperature + temperature_to_humidity + humidity_to_location][0]
     
 
 def main():
-    part_one()
+    # part_one()
     part_two()
 
 

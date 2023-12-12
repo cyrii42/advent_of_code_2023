@@ -34,3 +34,11 @@
 #     return output_list
 
 # print(create_subranges(350401))
+
+import itertools
+
+r1 = range(44, 59)
+r2 = range(51, 64)
+
+woii = itertools.chain(r1, r2)
+print(woii)
