@@ -178,6 +178,9 @@ class Seed():
                     break
         return num_to_test
 
+    def range_test(self, test_range: range) -> bool:
+        return self.seed_num in test_range
+
     
 @dataclass
 class SeedGroup():
@@ -192,21 +195,23 @@ class SeedGroup():
         self.seed_range_end = self.seed_range_start + self.seed_range_length
         self.seed_range = range(self.seed_range_start, self.seed_range_end)
         
-    def create_seeds_in_seed_range(self) -> None:
-        return [Seed(x, self.maps_list) for x in self.seed_range]
+    def create_seeds_in_seed_range(self, seed_range: range) -> None:
+        return [Seed(x, self.maps_list) for x in seed_range]
     
     def create_subranges(self) -> list[range]:
         # chunk_size = self.seed_range_length // 10
         # num_subranges = ((self.seed_range_length // chunk_size) + 1) if ((self.seed_range_length % chunk_size) != 0) else (self.seed_range_length // chunk_size)
         # return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
-        num_subranges = 50
+        num_subranges = 500
         chunk_size = (self.seed_range_length // num_subranges) + (self.seed_range_length % num_subranges)
         return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
         
     def find_lowest_location_num(self) -> int:
-        # seeds_list = self.create_seeds_in_seed_range()
+        for range in self.create_subranges():
+            seeds_list = self.create_seeds_in_seed_range(range)
+            print(f"Lowest Location Num in {range}:  {min([seed.find_location_num() for seed in seeds_list])}")
         
-        return self.create_subranges()
+        # return self.create_subranges()
 
 
 def part_two():
