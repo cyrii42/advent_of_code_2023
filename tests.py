@@ -23,14 +23,14 @@
 # num_subranges = ((seed_range_length // chunk_size) + 1) if ((seed_range_length % chunk_size) != 0) else (seed_range_length // chunk_size)
 # print(num_subranges)
 
-def create_subranges(seed_range_length: int) -> list[range]:
-    chunk_size = 10000
-    num_subranges = ((seed_range_length // chunk_size) + 1) if ((seed_range_length % chunk_size) != 0) else (seed_range_length // chunk_size)
+# def create_subranges(seed_range_length: int) -> list[range]:
+#     chunk_size = 10000
+#     num_subranges = ((seed_range_length // chunk_size) + 1) if ((seed_range_length % chunk_size) != 0) else (seed_range_length // chunk_size)
     
-    output_list = []
-    for n in range(num_subranges):
-        output_list.append(range(chunk_size*n, min(seed_range_length, chunk_size*(n+1))))
+#     output_list = []
+#     for n in range(num_subranges):
+#         output_list.append(range(chunk_size*n, min(seed_range_length, chunk_size*(n+1))))
         
-    return output_list
+#     return output_list
 
-print(create_subranges(350401))
+# print(create_subranges(350401))

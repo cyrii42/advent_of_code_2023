@@ -124,13 +124,14 @@ from pprint import pprint
 from day5_data_ingestion import (process_maps, process_seeds,
                                  process_test_maps, process_test_seeds)
 
+
 @dataclass
 class MapRow():
     destination_range_start: int = field(repr=False)
     source_range_start: int = field(repr=False)
     range_length: int = field(repr=False)
-    destination_range: (int, int) = field(init=False)
-    source_range: (int, int) = field(init=False)
+    destination_range: range = field(init=False)
+    source_range: range = field(init=False)
 
     def __post_init__(self) -> None:
         self.destination_range = self.calculate_destination_range()
@@ -138,11 +139,11 @@ class MapRow():
         
     def calculate_destination_range(self) -> (int, int):
         destination_range_end = self.destination_range_start - 1 + self.range_length
-        return (self.destination_range_start, destination_range_end)
+        return range(self.destination_range_start, destination_range_end)
 
     def calculate_source_range(self) -> (int, int):
         source_range_end = self.source_range_start - 1 + self.range_length
-        return (self.source_range_start, source_range_end)
+        return range(self.source_range_start, source_range_end)
 
     
 @dataclass
@@ -151,10 +152,19 @@ class Map():
     destination_type: str
     rows: list[MapRow] = field(repr=False)
     range_dict_list: list[dict] = field(init=False, repr=False)
+    source_range_list: list[range] = field(init=False)
+    full_source_range: range = field(init=False)
 
     def __post_init__(self) -> None:
         self.range_dict_list = self.construct_range_dict_list()
+        self.source_range_list = self.construct_sorted_source_range()
+        self.full_source_range = range(self.source_range_list[0].start, self.source_range_list[-1].stop)
 
+    def construct_sorted_source_range(self) -> None:
+        source_range_list = [x.source_range for x in self.rows]
+        source_range_list = sorted(source_range_list, key=lambda x: x.start)
+        return source_range_list
+            
     def construct_range_dict_list(self) -> list[dict]:
         output_list = []
         for row in self.rows:
@@ -198,11 +208,11 @@ class SeedGroup():
     def create_seeds_in_seed_range(self, seed_range: range) -> None:
         return [Seed(x, self.maps_list) for x in seed_range]
     
-    def create_subranges(self) -> list[range]:
+    def create_subranges(self, num_subranges:int = 50) -> list[range]:
         # chunk_size = self.seed_range_length // 10
         # num_subranges = ((self.seed_range_length // chunk_size) + 1) if ((self.seed_range_length % chunk_size) != 0) else (self.seed_range_length // chunk_size)
         # return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
-        num_subranges = 500
+
         chunk_size = (self.seed_range_length // num_subranges) + (self.seed_range_length % num_subranges)
         return [range(chunk_size*n, min(self.seed_range_length, chunk_size*(n+1))) for n in range(num_subranges)]
         
@@ -223,15 +233,25 @@ def part_two():
     maps_list = create_map_objects(raw_maps_list)
     range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
     range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
-    seed_groups = [SeedGroup(range_start_nums[i], range_length_nums[i], maps_list) for i, x in enumerate(range_start_nums)]
-    
-    print(f"\n# of Seed Groups in Part 2:  {len(seed_groups)}")
-    for i, seed_group in enumerate(seed_groups):
-        print(f"\nSeed Group #{i+1}:  {seed_group.seed_range_length:,} seeds.",
-              f"\nSubranges: {seed_group.find_lowest_location_num()}") # remember that the end of a range() is non-inclusive
+    seed_group_list = [SeedGroup(range_start_nums[i], range_length_nums[i], maps_list) for i, x in enumerate(range_start_nums)]
+    print(f"\n# of Seed Groups in Part 2:  {len(seed_group_list)}")
 
+    seed_group_range_list = [x.seed_range for x in seed_group_list]
+    seed_group_range_list = sorted(seed_group_range_list, key=lambda x: x.start)
+
+    for i, seed_group_range in enumerate(seed_group_range_list):
+        print(f"Seed Group #{i+1}:  {seed_group_range.start:,} to {seed_group_range.stop:,}")
+
+    for map_num, map in enumerate(maps_list):
+        map_range_list = [x for x in map.source_range_list]
+        map_range_list = sorted(map_range_list, key=lambda x: x.start)
+
+        for i, map_range in enumerate(map_range_list):
+            print(f"Map #{map_num+1}, Range #{i+1}:  {map_range.start:,} to {map_range.stop:,}")
+
+    # part_two_answer = find_answer_for_part_two_brute_force(raw_seeds_list, create_map_objects(raw_maps_list))
     part_two_answer = None
-    print(f"PART #2 ANSWER:  {part_two_answer}")
+    print(f"\nPART #2 ANSWER:  {part_two_answer}")
 
 
 
@@ -244,7 +264,7 @@ def part_two():
 
 
 
-def find_answer_for_part_two_OLD(raw_seeds_list: list[int], maps_list: list[Map]) -> int:
+def find_answer_for_part_two_brute_force(raw_seeds_list: list[int], maps_list: list[Map]) -> int:
     range_start_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 == 0)]
     range_length_nums = [n for i, n in enumerate(raw_seeds_list) if (i % 2 != 0)]
     seed_num_pairs = [(range_start_nums[i], range_length_nums[i]) for i, x in enumerate(range_start_nums)]
@@ -269,8 +289,8 @@ def find_answer_for_part_two_OLD(raw_seeds_list: list[int], maps_list: list[Map]
             else:
                 lowest_location_num = min(lowest_location_num, seed_location_num)
             if (n % chunk_size == 0):
-                print(f"Processing Seed {total_progress:,} of {total_seeds_num:,} ({(((total_progress)/total_seeds_num)*100):.2f}%).",
-                        f"Current lowest location #:  {lowest_location_num}")
+                print(f"Processing Seed {total_progress+1:,} of {total_seeds_num:,} ({(((total_progress)/total_seeds_num)*100):.2f}%).",
+                        f"Location #:  {seed_location_num}.  Current lowest location #:  {lowest_location_num}")
             total_progress += 1
     return lowest_location_num
 
