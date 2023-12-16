@@ -85,5 +85,21 @@
 # woii = [0,0,0,0,0]
 # print(set(woii) == {0})
 
-asdf = [0, 3, 6, 9, 12, 15]
-print(asdf[-2])
+# asdf = [0, 3, 6, 9, 12, 15]
+# print(asdf[-2])
+
+from enum import Enum
+class Pipe(Enum):
+    START = 'S'
+    VERTICAL = '|'
+    HORIZONTAL = '-'
+    NORTH_TO_EAST = 'L'
+    NORTH_TO_WEST = 'J'
+    SOUTH_TO_WEST = '7'
+    SOUTH_TO_EAST = 'F'
+    GROUND = '.'
+
+asdf = 4
+
+if asdf == (6 or 4 or 5):
+    print('yes')
