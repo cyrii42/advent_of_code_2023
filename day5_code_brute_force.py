@@ -118,8 +118,8 @@ Consider all of the initial seed numbers listed in the ranges on the first line 
 
 
 '''
-import itertools
 from dataclasses import dataclass, field
+from datetime import datetime
 from pprint import pprint
 
 from day5_data_ingestion import (process_maps, process_seeds,
@@ -390,7 +390,7 @@ def find_answer_for_part_two_brute_force(raw_seeds_list: list[int], maps_list: l
             else:
                 lowest_location_num = min(lowest_location_num, seed_location_num)
             if (n % chunk_size == 0):
-                print(f"Processing Seed {total_progress+1:,} of {total_seeds_num:,} ({(((total_progress)/total_seeds_num)*100):.2f}%).",
+                print(f"{datetime.now().strftime('%I:%M:%S %p')}: Processing Seed {total_progress+1:,} of {total_seeds_num:,} ({(((total_progress)/total_seeds_num)*100):.2f}%).",
                         f"Location #:  {seed_location_num}.  Current lowest location #:  {lowest_location_num}")
             total_progress += 1
     return lowest_location_num

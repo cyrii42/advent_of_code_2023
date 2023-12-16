@@ -35,10 +35,55 @@
 
 # print(create_subranges(350401))
 
-import itertools
+# import itertools
 
-r1 = range(44, 59)
-r2 = range(51, 64)
+# r1 = range(44, 59)
+# r2 = range(51, 64)
 
-woii = itertools.chain(r1, r2)
-print(woii)
+# woii = itertools.chain(r1, r2)
+# print(woii)
+
+# r1 = range(234333330, 41223333333)
+# r2 = range(1, 4293846239846)
+
+# def is_in(x):
+#     return x in r1
+
+# print(any(map(is_in, r2)))
+
+# from enum import IntEnum
+
+# CARD_LIST = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+
+# class HandType(IntEnum):
+#     FIVE_OF_A_KIND = 6
+#     FOUR_OF_A_KIND = 5
+#     FULL_HOUSE = 4
+#     THREE_OF_A_KIND = 3
+#     TWO_PAIR = 2
+#     ONE_PAIR = 1
+#     HIGH_CARD = 0
+    
+# hand_list = [HandType.FULL_HOUSE, HandType.HIGH_CARD, HandType.ONE_PAIR, HandType.FOUR_OF_A_KIND, HandType.FOUR_OF_A_KIND, HandType.FULL_HOUSE, HandType.THREE_OF_A_KIND]
+
+# hand_list_sorted = sorted(hand_list, reverse=True)
+# print(hand_list_sorted)
+
+# asdf = "A2JA3JKQA"
+# # print(asdf.replace('J', ''))
+# # print(asdf)
+# # print(''.join(sorted(asdf.replace('J', ''), key=lambda x: asdf.count(x), reverse=True)))
+# print(asdf[0])
+
+# asdf = ['EFZ', 'OQZ', 'ZZZ', 'FEZ']
+# print(asdf)
+# aaaa = set([x[2] for x in asdf])
+# print(len(aaaa))
+# print('Z' in aaaa)
+# print(set(asdf))
+
+# woii = [0,0,0,0,0]
+# print(set(woii) == {0})
+
+asdf = [0, 3, 6, 9, 12, 15]
+print(asdf[-2])
