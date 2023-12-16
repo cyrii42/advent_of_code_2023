@@ -144,16 +144,6 @@ class MapChar():
     def __post_init__(self) -> None:
         self.find_connections_from_start() if self.char == Pipe.START else self.find_connections()
 
-    def get_mapchar_from_direction(self, direction: Direction):
-        if direction == Direction.NORTH:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num+1 and x.index == mapchar.index][0]
-        if direction == Direction.EAST:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num and x.index == mapchar.index+1][0]
-        if direction == Direction.SOUTH:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num-1 and x.index == mapchar.index][0]
-        if direction == Direction.WEST:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num and x.index == mapchar.index-1][0]
-
     def find_connections(self) -> None:
         if self.char == Pipe.VERTICAL:
             self.connection_1 = Direction('N') if self.north is not None else None
@@ -222,9 +212,6 @@ class Map():
             current_pipe = next_pipe
             steps += 1
 
-               
-                
-
     def get_mapchar_from_direction(self, mapchar: MapChar, direction: Direction):
         if direction == Direction.NORTH:
             return [x for x in self.char_list if x.row_num == mapchar.row_num+1 and x.index == mapchar.index][0]
@@ -253,39 +240,27 @@ def create_map() -> Map:
         if row_num == 0:
             map_char_list.append(
                 [MapChar(row_num, i, line_list, Pipe(char), 
-                        None,                           # north
-                        # None,                           # north_east
-                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',     # east
-                        # Pipe(line_list[row_num+1][i+1]) if i < len(row)-1 else '',   # south_east
-                        Pipe(line_list[row_num+1][i]),     # south
-                        # Pipe(line_list[row_num+1][i-1]),   # south_west
-                        Pipe(line_list[row_num][i-1]),     # west
-                        # None,                           # north_west
-                        ) for (i, char) in enumerate(row)])
+                        None,                                                       # north
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        Pipe(line_list[row_num+1][i]),                              # south
+                        Pipe(line_list[row_num][i-1]),                              # west
+                    ) for (i, char) in enumerate(row)])
         elif row_num >= len(line_list)-1:
             map_char_list.append(
                 [MapChar(row_num, i, line_list, Pipe(char), 
-                        Pipe(line_list[row_num-1][i]),     # north
-                        # Pipe(line_list[row_num-1][i+1]) if i < len(row)-1 else '',   # north_east
-                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',     # east
-                        # None,   # south_east
-                        None,     # south
-                        # None,   # south_west
-                        Pipe(line_list[row_num][i-1]),     # west
-                        # Pipe(line_list[row_num-1][i-1]),   # north_west
-                        ) for (i, char) in enumerate(row)])
+                        Pipe(line_list[row_num-1][i]),                              # north
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        None,                                                       # south
+                        Pipe(line_list[row_num][i-1]),                              # west
+                    ) for (i, char) in enumerate(row)])
         else:
             map_char_list.append(
                 [MapChar(row_num, i, line_list, Pipe(char), 
-                        Pipe(line_list[row_num-1][i]),     # north
-                        # Pipe(line_list[row_num-1][i+1]) if i < len(row)-1 else '',   # north_east
-                        # Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',     # east
-                        # Pipe(line_list[row_num+1][i+1])  if i < len(row)-1 else '',     # south_east
-                        Pipe(line_list[row_num+1][i]),      # south
-                        # Pipe(line_list[row_num+1][i-1]),   # south_west
-                        Pipe(line_list[row_num][i-1]),     # west
-                        # Pipe(line_list[row_num-1][i-1]),   # north_west
-                        ) for (i, char) in enumerate(row)])
+                        Pipe(line_list[row_num-1][i]),                              # north
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        Pipe(line_list[row_num+1][i]),                              # south
+                        Pipe(line_list[row_num][i-1]),                              # west
+                    ) for (i, char) in enumerate(row)])
             
     return Map([char for row in map_char_list for char in row])
 
