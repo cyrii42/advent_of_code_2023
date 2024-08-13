@@ -104,6 +104,106 @@ Here are the distances for each tile on that loop:
 
 Find the single giant loop starting at S. How many steps along the loop does it take to get from the starting position to the point farthest from the starting position?
 
+--- Part Two ---
+
+You quickly reach the farthest point of the loop, but the animal never emerges. Maybe its nest is within the area enclosed by the loop?
+
+To determine whether it's even worth taking the time to search for such a nest, you should calculate how many tiles are contained within the loop. For example:
+
+...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........
+
+The above loop encloses merely four tiles - the two pairs of . in the southwest and southeast (marked I below). The middle . tiles (marked O below) are not in the loop. Here is the same loop again with those regions marked:
+
+...........
+.S-------7.
+.|F-----7|.
+.||OOOOO||.
+.||OOOOO||.
+.|L-7OF-J|.
+.|II|O|II|.
+.L--JOL--J.
+.....O.....
+
+In fact, there doesn't even need to be a full tile path to the outside for tiles to count as outside the loop - squeezing between pipes is also allowed! Here, I is still within the loop and O is still outside the loop:
+
+..........
+.S------7.
+.|F----7|.
+.||OOOO||.
+.||OOOO||.
+.|L-7F-J|.
+.|II||II|.
+.L--JL--J.
+..........
+
+In both of the above examples, 4 tiles are enclosed by the loop.
+
+Here's a larger example:
+
+.F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...
+
+The above sketch has many random bits of ground, some of which are in the loop (I) and some of which are outside it (O):
+
+OF----7F7F7F7F-7OOOO
+O|F--7||||||||FJOOOO
+O||OFJ||||||||L7OOOO
+FJL7L7LJLJ||LJIL-7OO
+L--JOL7IIILJS7F-7L7O
+OOOOF-JIIF7FJ|L7L7L7
+OOOOL7IF7||L7|IL7L7|
+OOOOO|FJLJ|FJ|F7|OLJ
+OOOOFJL-7O||O||||OOO
+OOOOL---JOLJOLJLJOOO
+
+In this larger example, 8 tiles are enclosed by the loop.
+
+Any tile that isn't part of the main loop can count as being enclosed by the loop. Here's another example with many bits of junk pipe lying around that aren't connected to the main loop at all:
+
+FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+
+Here are just the tiles that are enclosed by the loop marked with I:
+
+FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJIF7FJ-
+L---JF-JLJIIIIFJLJJ7
+|F|F-JF---7IIIL7L|7|
+|FFJF7L7F-JF7IIL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+
+In this last example, 10 tiles are enclosed by the loop.
+
+Figure out whether you have time to search for the nest by calculating the area within the loop. How many tiles are enclosed by the loop?
+
 '''
 
 from dataclasses import dataclass, field
@@ -133,13 +233,18 @@ class Direction(Enum):
 class MapChar():
     row_num: int
     index: int
-    char: Pipe = field(repr=False)
+    char: Pipe #= field(repr=False)
     north: Pipe = field(repr=False)
+    north_east: Pipe = field(repr=False)
     east: Pipe = field(repr=False)
+    south_east: Pipe = field(repr=False)
     south: Pipe = field(repr=False)
+    south_west: Pipe = field(repr=False)
     west: Pipe = field(repr=False)
+    north_west: Pipe = field(repr=False)
     connection_1: Direction | None = field(init=False)
     connection_2: Direction | None = field(init=False)
+    part_of_main_loop: bool = False
 
     def __post_init__(self) -> None:
         self.find_connections_from_start() if self.char == Pipe.START else self.find_connections()
@@ -170,13 +275,13 @@ class MapChar():
     def find_connections_from_start(self) -> None:
         conn_list = []
         if self.north == Pipe.VERTICAL or self.north == Pipe.SOUTH_TO_EAST or self.north == Pipe.SOUTH_TO_WEST:
-            conn_list.append(self.north) if self.north is not None else conn_list.append(None)
+            conn_list.append(Direction('N')) if self.north is not None else conn_list.append(None)
         if self.east == Pipe.HORIZONTAL or self.east == Pipe.NORTH_TO_WEST or self.east == Pipe.SOUTH_TO_WEST:
-            conn_list.append(self.east) if self.east is not None else conn_list.append(None)
+            conn_list.append(Direction('E')) if self.east is not None else conn_list.append(None)
         if self.south == Pipe.VERTICAL or self.south == Pipe.NORTH_TO_EAST or self.south == Pipe.NORTH_TO_WEST:
-            conn_list.append(self.south) if self.south is not None else conn_list.append(None)
+            conn_list.append(Direction('S')) if self.south is not None else conn_list.append(None)
         if self.west == Pipe.HORIZONTAL or self.west == Pipe.NORTH_TO_EAST or self.west == Pipe.SOUTH_TO_EAST:
-            conn_list.append(self.west) if self.west is not None else conn_list.append(None)
+            conn_list.append(Direction('W')) if self.west is not None else conn_list.append(None)
         if len(conn_list) != 2:
             raise ConnectionNumError(f"Starting MapChar must have exactly 2 connections; this one has {len(conn_list)}")
         else:
@@ -190,37 +295,63 @@ class Map():
     steps_to_farthest_point: int = field(init=False)
 
     def __post_init__(self) -> None:
-        self.starting_point = [x for x in self.char_list if x.char == Pipe.START][0]
-        self.steps_to_farthest_point = self.calculate_steps_to_farthest_point(self.starting_point)
+        self.starting_point = next(filter(lambda x: x.char == Pipe.START, self.char_list))
+        self.steps_to_farthest_point = self.calculate_steps_to_farthest_point()
+        self.tiles_enclosed_by_loop = self.calculate_tiles_enclosed_by_loop()
 
-    def calculate_steps_to_farthest_point(self, starting_point) -> int:
-        # Direction 1
-        current_pipe = starting_point
+    def calculate_tiles_enclosed_by_loop(self) -> int:
+        total = 0
+        for mapchar in self.char_list:
+            if mapchar.part_of_main_loop:
+                continue
+            else:
+                # print([dir for dir in Direction.__iter__()])
+                print(f"Checking {mapchar}...")
+                char_list = [self.get_mapchar_from_direction(mapchar, dir) for dir in Direction.__iter__()]
+                # print(f"Checking {char_list}")
+                if any([char for char in char_list if char is None or char.part_of_main_loop == False]):
+                    continue
+            total += 1
+        return total
+
+    def calculate_steps_to_farthest_point(self) -> int:
+        current_pipe = self.starting_point
+        previous_pipe = current_pipe
+        current_pipe.part_of_main_loop = True
         steps = 0
         while True:
-            if steps > 0 and current_pipe == self.starting_point:
-                return steps
+            print(f"Trying {current_pipe}...")
+            if steps == 0:
+                next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1)
+            elif self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1) != previous_pipe:
+                next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1)
             else:
-                if steps == 0:
-                    next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1)
-                else:
-                    if self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1) != previous_pipe:
-                        next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_1)
-                    else:
-                        next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_2)
+                next_pipe = self.get_mapchar_from_direction(current_pipe, current_pipe.connection_2)
+            next_pipe.part_of_main_loop = True
+            if steps > 0 and next_pipe.char == Pipe.START:
+                print(f"Found Pipe:  {next_pipe}")
+                return steps // 2 + 1
             previous_pipe = current_pipe
             current_pipe = next_pipe
             steps += 1
 
-    def get_mapchar_from_direction(self, mapchar: MapChar, direction: Direction):
+    def get_mapchar_from_direction(self, mapchar: MapChar, direction: Direction) -> MapChar:
         if direction == Direction.NORTH:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num+1 and x.index == mapchar.index][0]
+            return None if mapchar.row_num == 0 else next(filter(lambda x: x.row_num == mapchar.row_num-1 and x.index == mapchar.index, self.char_list))
+        if direction == Direction.NORTH_EAST:
+            return None if mapchar.row_num == 0 or mapchar.index == 139 else next(filter(lambda x: x.row_num == mapchar.row_num-1 and x.index == mapchar.index+1, self.char_list))
         if direction == Direction.EAST:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num and x.index == mapchar.index+1][0]
+            return None if mapchar.index == 139 else next(filter(lambda x: x.row_num == mapchar.row_num and x.index == mapchar.index+1, self.char_list))
+        if direction == Direction.SOUTH_EAST:
+            return None if mapchar.row_num == 139 or mapchar.index == 139 else next(filter(lambda x: x.row_num == mapchar.row_num+1 and x.index == mapchar.index+1, self.char_list))
         if direction == Direction.SOUTH:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num-1 and x.index == mapchar.index][0]
+            return None if mapchar.row_num == 139 else next(filter(lambda x: x.row_num == mapchar.row_num+1 and x.index == mapchar.index, self.char_list))
+        if direction == Direction.SOUTH_WEST:
+            return None if mapchar.row_num == 139 or mapchar.index == 0 else next(filter(lambda x: x.row_num == mapchar.row_num+1 and x.index == mapchar.index-1, self.char_list))
         if direction == Direction.WEST:
-            return [x for x in self.char_list if x.row_num == mapchar.row_num and x.index == mapchar.index-1][0]
+            return  None if mapchar.index == 0 else next(filter(lambda x: x.row_num == mapchar.row_num and x.index == mapchar.index-1, self.char_list))
+        if direction == Direction.NORTH_WEST:
+            return None if mapchar.row_num == 0 or mapchar.index == 0 else next(filter(lambda x: x.row_num == mapchar.row_num-1 and x.index == mapchar.index-1, self.char_list))
 
     
 
@@ -228,7 +359,7 @@ class Map():
 def main():
     map = create_map()
     print(map.starting_point)
-    print(f"\nPart One Answer:  {map.steps_to_farthest_point}")
+    print(f"\nPart Two Answer:  {map.tiles_enclosed_by_loop}")  # 322 is too low
 
     
 def create_map() -> Map:
@@ -239,27 +370,39 @@ def create_map() -> Map:
     for row_num, row in enumerate(line_list):
         if row_num == 0:
             map_char_list.append(
-                [MapChar(row_num, i, line_list, Pipe(char), 
+                [MapChar(row_num, i, Pipe(char), 
                         None,                                                       # north
-                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        None,                                                       # north_east
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else None,    # east
+                        Pipe(line_list[row_num+1][i+1]) if i< len(row)-1 else None,   # south_east
                         Pipe(line_list[row_num+1][i]),                              # south
+                        Pipe(line_list[row_num+1][i-1]),                              # south_west
                         Pipe(line_list[row_num][i-1]),                              # west
+                        None,                                                         # north_west
                     ) for (i, char) in enumerate(row)])
         elif row_num >= len(line_list)-1:
             map_char_list.append(
-                [MapChar(row_num, i, line_list, Pipe(char), 
+                [MapChar(row_num, i, Pipe(char), 
                         Pipe(line_list[row_num-1][i]),                              # north
-                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        Pipe(line_list[row_num-1][i+1])  if i < len(row)-1 else None, # north_east
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else None,    # east
+                        None,                                                       # south_east
                         None,                                                       # south
+                        None,                                                         # south_west
                         Pipe(line_list[row_num][i-1]),                              # west
+                        Pipe(line_list[row_num-1][i-1]),                              # north_west
                     ) for (i, char) in enumerate(row)])
         else:
             map_char_list.append(
-                [MapChar(row_num, i, line_list, Pipe(char), 
+                [MapChar(row_num, i, Pipe(char), 
                         Pipe(line_list[row_num-1][i]),                              # north
-                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else '',    # east
+                        Pipe(line_list[row_num-1][i+1]) if i < len(row)-1 else None,  # north_east
+                        Pipe(line_list[row_num][i+1]) if i < len(row)-1 else None,    # east
+                        Pipe(line_list[row_num+1][i+1]) if i< len(row)-1 else None,   # south_east
                         Pipe(line_list[row_num+1][i]),                              # south
+                        Pipe(line_list[row_num+1][i-1]),                              # south_west
                         Pipe(line_list[row_num][i-1]),                              # west
+                        Pipe(line_list[row_num-1][i-1]),                              # north_west
                     ) for (i, char) in enumerate(row)])
             
     return Map([char for row in map_char_list for char in row])

@@ -89,6 +89,7 @@
 # print(asdf[-2])
 
 from enum import Enum
+from typing import Any, Iterable
 class Pipe(Enum):
     START = 'S'
     VERTICAL = '|'
@@ -98,8 +99,17 @@ class Pipe(Enum):
     SOUTH_TO_WEST = '7'
     SOUTH_TO_EAST = 'F'
     GROUND = '.'
+class Direction(Enum):
+    NORTH = 'N'
+    NORTH_EAST = 'NE'
+    EAST = 'E'
+    SOUTH_EAST = 'SE'
+    SOUTH = 'S'
+    SOUTH_WEST = 'SW'
+    WEST = 'W'
+    NORTH_WEST = 'NW'
 
-asdf = 4
+asdf = ['EFZ', 'OQZ', 'ZZZ', 'FEZ']
 
-if asdf == (6 or 4 or 5):
-    print('yes')
+for x in Direction.__iter__():
+    print(x)
